@@ -1,0 +1,792 @@
+<header class="topbar">
+  <a class="brand" href="/">DSIN <span>/ le labo des API</span></a>
+  <div class="top-actions">
+    <button type="button" id="open-jargon" class="jargon-open" aria-haspopup="dialog" (click)="openJargon()">Dico du jargon</button>
+    <a href="/oas.html" target="_blank" rel="noopener">Ouvrir le contrat (OAS) · Swagger Editor ↗</a>
+    <form class="api-key-inline" (submit)="$event.preventDefault(); applyRuntimeApiKey()">
+      <label class="sr-only" for="header-api-key">Clé API TheCatAPI</label>
+      <input id="header-api-key" name="headerApiKey" type="password" maxlength="120" autocomplete="off" autocapitalize="off" spellcheck="false"
+        [ngModel]="runtimeApiKeyInput()" (ngModelChange)="setRuntimeApiKeyInput($event)" placeholder="Clé API (optionnel)">
+      <button type="submit" class="quiet">{{ hasRuntimeApiKey() ? 'Remplacer' : 'Activer' }}</button>
+      @if (hasRuntimeApiKey()) {
+        <button type="button" class="quiet" (click)="clearRuntimeApiKey()">Retirer</button>
+      }
+    </form>
+  </div>
+</header>
+<main>
+  <div class="page-title">
+    <p class="eyebrow">Atelier interactif · 5 étapes · environ {{ totalMinutes }} minutes · aucun prérequis</p>
+    <h1>Une API. Des chats. <em>Plein de possibilités.</em></h1>
+  </div>
+  <div id="source-banner" class="notice" [class.simulated]="mode() === 'demo'" role="status">
+    @if (mode() === 'demo') {
+      DONNÉES SIMULÉES — les 10 races, leurs fiches et leurs illustrations sont fabriquées pour la démonstration. Aucun appel n’est envoyé à TheCatAPI et aucune IA n’intervient : les réponses et les codes d’erreur sont simulés.
+    } @else {
+      Les données viennent de TheCatAPI ({{ apiBase() }}) par l’intermédiaire du petit serveur du kiosque (le BFF, écrit en Java avec Quarkus) ·
+      @if (hasApiKey()) { la clé d’accès est configurée côté serveur et pré-remplie dans le champ « Clé API » pour l’atelier (vous pouvez la remplacer). }
+      @else if (hasRuntimeApiKey()) { aucune clé n’est configurée côté serveur, mais une clé temporaire est active dans cet onglet. }
+      @else { la clé d’accès n’est pas configurée côté serveur : l’API refuse les demandes (erreur 403). }
+    }
+  </div>
+
+  <details id="welcome" class="welcome" [open]="welcomeOpen()" (toggle)="onWelcomeToggle($event)">
+    <summary>Bienvenue&nbsp;! À quoi sert ce kiosque, et par où commencer&nbsp;?</summary>
+    <div class="welcome-body">
+      <div class="welcome-text">
+        <p class="welcome-pitch">Ce kiosque est un <strong>atelier interactif</strong>&nbsp;: en cinq étapes (environ {{ totalMinutes }}&nbsp;minutes), vous découvrez comment des logiciels se parlent grâce à une <strong>API</strong>, et comment une <strong>IA</strong> peut aider à les construire. Aucun prérequis&nbsp;: vous lisez, vous cliquez, vous essayez avec une vraie API.</p>
+        <ul class="welcome-tips">
+          <li><strong>Un mot vous échappe&nbsp;?</strong> Le bouton <button type="button" class="jargon" (click)="openJargon()">Dico du jargon</button> (en haut de la page) l’explique avec des mots simples.</li>
+          <li><strong>Les étapes 2 à 5 commencent par «&nbsp;En deux mots&nbsp;»</strong>&nbsp;: l’essentiel, une comparaison avec la vie courante et ce que vous allez faire.</li>
+          <li><strong>Les passages «&nbsp;Côté technique&nbsp;» sont repliés</strong>&nbsp;: ouvrez-les si le détail vous intéresse, passez-les sinon.</li>
+          <li><strong>Les «&nbsp;missions&nbsp;»</strong> sont de petites actions à réaliser (ouvrir, copier, appeler une API…). La barre sous les onglets les compte&nbsp;: rien n’est noté, elle sert à vous repérer.</li>
+        </ul>
+        <h2 class="welcome-subtitle" id="welcome-ideas">Le programme, en 5 phases</h2>
+        <ol class="acronyms" aria-labelledby="welcome-ideas">
+          <li><strong>Phase 1</strong> <span>Découvrir l’API des chats avec curl, sans puis avec clé.</span></li>
+          <li><strong>Phase 2</strong> <span>Transformer l’appel curl en page web avec Copilot Covéa.</span></li>
+          <li><strong>Phase 3</strong> <span>Poser les concepts utiles (DDD, API first, Richardson N2, SPA, front/BFF) et manipuler.</span></li>
+          <li><strong>Phase 4</strong> <span>Montrer qu’une même API peut alimenter une autre application métier&nbsp;: le vote de chats.</span></li>
+          <li><strong>Phase 5</strong> <span>Conclure l’atelier avec les messages clés à réutiliser.</span></li>
+        </ol>
+      </div>
+    </div>
+  </details>
+
+  <nav class="journey" aria-label="Parcours du kiosque">
+    <div class="tablist" role="tablist" aria-label="Étapes du parcours" (keydown)="onTabKey($event)">
+      @for (step of steps; track step.id) {
+        <button type="button" role="tab" class="tab" [id]="'tab-' + step.id" [attr.aria-controls]="'panel-' + step.id"
+          [attr.aria-selected]="active() === step.id" [attr.tabindex]="active() === step.id ? 0 : -1"
+          [attr.data-status]="statusOf(step)" (click)="goTo(step.id)">
+          <span class="tab-num" aria-hidden="true">{{ statusOf(step) === 'done' ? '✓' : step.number }}</span>
+          <span class="tab-text">
+            <span class="tab-title">{{ step.title }}</span>
+            <span class="tab-theme">{{ step.themePlain }}</span>
+          </span>
+          <span class="sr-only">, étape {{ step.number }} sur {{ steps.length }},
+            @switch (statusOf(step)) { @case ('done') { terminée } @case ('current') { en cours } @default { pas commencée } }</span>
+        </button>
+      }
+    </div>
+    <div class="journey-bar">
+      <progress class="journey-progress" aria-label="Missions réussies" [max]="journeyProgress().total" [value]="journeyProgress().done"></progress>
+      <span id="journey-count" class="journey-count">{{ journeyProgress().done }}/{{ journeyProgress().total }} missions</span>
+      @if (upNext(); as next) {
+        <span class="journey-next">Prochaine mission :
+          <button type="button" id="next-mission" class="text-button" (click)="goTo(next.step.id)">{{ next.mission.label }}</button></span>
+      } @else {
+        <span id="journey-done" class="journey-next">Parcours terminé : bravo !</span>
+      }
+      <button type="button" id="restart" class="text-button" (click)="restartJourney()">Recommencer</button>
+    </div>
+  </nav>
+
+  <!-- Étape 1 · Découverte -->
+  <section class="panel" id="panel-besoin" role="tabpanel" aria-labelledby="tab-besoin" [hidden]="active() !== 'besoin'">
+    <header class="panel-head">
+      <div class="panel-intro">
+        <ng-container *ngTemplateOutlet="meta; context: { $implicit: stepById('besoin') }"></ng-container>
+        <h2>On aime les chats&nbsp;: testons l’API ensemble</h2>
+        <p class="lead">Phase 1 en version directe&nbsp;: on introduit <strong>curl</strong>, on tente un premier appel sans clé, puis le même avec clé. Ensuite on lit la réponse&nbsp;: est-ce clair, que comprenez-vous, qu’est-ce qui reste flou&nbsp;?</p>
+        <ng-container *ngTemplateOutlet="goal; context: { $implicit: stepById('besoin') }"></ng-container>
+        <div class="story">
+          <div>
+            <h3>Le besoin</h3>
+            <p>La DSIN recrute son <strong>Chief Happiness Chat</strong>. Au programme&nbsp;: améliorer l’ambiance, dormir en comité et marcher sur le clavier uniquement hors production.</p>
+            <p>De quoi a-t-on besoin pour choisir ? Chercher une race, comparer des informations, consulter une fiche. Voilà le besoin&nbsp;: la technique viendra ensuite.</p>
+            <p class="hint">Réserver ou adopter un chat n’est pas prévu&nbsp;: cela sort du cadre de l’atelier.</p>
+          </div>
+          <div class="hero-card" aria-hidden="true">
+            <span class="pill">POSTE À POURVOIR</span>
+            <div class="cat-art"> /\_/\<br>( o.o )<br> &gt; ^ &lt;</div>
+            <h3>Chief Happiness Chat</h3><p>Expert en sieste.<br>Disponible pour marcher sur votre clavier.</p>
+            <small>Aucun chat n’a été déployé en production.</small>
+          </div>
+        </div>
+      </div>
+      <ng-container *ngTemplateOutlet="missionList; context: { $implicit: stepById('besoin') }"></ng-container>
+    </header>
+    <section class="lab" id="phase1-lab" aria-labelledby="phase1-lab-title">
+      <p class="eyebrow">Pratique immédiate</p>
+      <h3 id="phase1-lab-title">Deux appels curl pour comprendre le fonctionnement</h3>
+      <ol class="lab-steps">
+        <li class="lab-step">
+          <span class="step-badge" aria-hidden="true">1</span>
+          <div class="lab-body">
+            <h4>Sans clé</h4>
+            <p>On appelle la fiche <code>abys</code> sans clé pour voir la réaction de l’API.</p>
+            <div class="cmd-box">
+              <pre class="cmd" tabindex="0">{{ curlWithoutKey }}</pre>
+              <div class="cmd-actions"><button type="button" class="primary" (click)="openCurl('sans-cle')">Jouer ▶</button></div>
+            </div>
+          </div>
+        </li>
+        <li class="lab-step">
+          <span class="step-badge" aria-hidden="true">2</span>
+          <div class="lab-body">
+            <h4>Avec clé</h4>
+            <p>On rejoue l’appel avec la clé pour récupérer une réponse utile à l’écran.</p>
+            <div class="cmd-box">
+              <pre class="cmd" tabindex="0">{{ curlWithKey }}</pre>
+              <div class="cmd-actions"><button type="button" class="primary" (click)="openCurl('avec-cle')">Jouer ▶</button></div>
+            </div>
+          </div>
+        </li>
+      </ol>
+      <p class="hint"><strong>Question au groupe&nbsp;:</strong> que lisez-vous dans la réponse JSON&nbsp;? Quels champs semblent directement utiles pour une page web&nbsp;?</p>
+    </section>
+    <ng-container *ngTemplateOutlet="panelNav; context: { $implicit: stepById('besoin') }"></ng-container>
+  </section>
+
+  <!-- Étape 2 · Atelier IA -->
+  <section class="panel" id="panel-contrat" role="tabpanel" aria-labelledby="tab-contrat" [hidden]="active() !== 'contrat'">
+    <header class="panel-head">
+      <div class="panel-intro">
+        <ng-container *ngTemplateOutlet="meta; context: { $implicit: stepById('contrat') }"></ng-container>
+        <h2>Atelier IA&nbsp;: du curl à une page web</h2>
+        <p class="lead">On repart de l’appel curl validé, puis on s’appuie sur le contrat OpenAPI pour demander à <strong>Copilot Covéa</strong> de générer une page web qui appelle l’API. Objectif&nbsp;: produire vite, relire proprement, garder la clé sous contrôle.</p>
+        <ng-container *ngTemplateOutlet="goal; context: { $implicit: stepById('contrat') }"></ng-container>
+      </div>
+      <ng-container *ngTemplateOutlet="missionList; context: { $implicit: stepById('contrat') }"></ng-container>
+    </header>
+    <ng-container *ngTemplateOutlet="inShort; context: { $implicit: stepById('contrat') }"></ng-container>
+    <div id="contract" class="contract">
+      @if (oasLoading()) { <p class="hint">Lecture du contrat…</p> }
+      @if (oasError()) {
+        <div id="oas-error" class="error" role="alert">{{ oasError() }} <button type="button" class="quiet" (click)="loadContract()">Réessayer</button></div>
+      }
+      @if (oasExcerpt(); as oas) {
+        <div id="oas-summary" class="chips">
+          <span class="chip">OpenAPI {{ oas.openapi }}</span>
+          <span class="chip">{{ oas.title }} · version {{ oas.version }}</span>
+          <span class="chip">Serveur : {{ oas.server }}</span>
+        </div>
+        <p>Ce contrat décrit <strong>{{ oas.totalOperations }} opérations</strong> sur {{ oas.totalPaths }} chemins (une opération est une action possible, comme «&nbsp;lister les races&nbsp;»&nbsp;; un chemin est une adresse). Le kiosque n’en utilise que {{ oas.operations.length }}&nbsp;: dépliez-en une pour voir ce qu’il envoie et ce que le contrat annonce.</p>
+        @if (oas.missing.length) {
+          <p id="oas-missing" class="error" role="alert">Le contrat lu ne décrit pas : {{ oas.missing.join(', ') }}. Le kiosque et le contrat ont divergé.</p>
+        }
+        <div class="ops">
+          @for (op of oas.operations; track op.key) {
+            <details class="op" (toggle)="onOperationToggle($event)">
+              <summary>
+                <span class="op-method" [attr.data-method]="op.method">{{ op.method }}</span>
+                <code class="op-path">{{ op.path }}</code>
+                <span class="op-summary">{{ op.summary }}</span>
+              </summary>
+              <div class="op-body">
+                <p><strong>Dans ce kiosque.</strong> {{ op.usage }}</p>
+                @if (op.sent.length) {
+                  <p><strong>Ce que le kiosque envoie, d’après le contrat :</strong></p>
+                  <ul class="op-fields">
+                    @for (field of op.sent; track field.name) {
+                      <li><code>{{ field.name }}</code> <span class="tag">{{ locationLabel(field.location) }}</span>
+                        @if (field.required) { <span class="tag required">obligatoire</span> }
+                        <span class="field-description">{{ field.description }}</span></li>
+                    }
+                  </ul>
+                } @else if (!op.notFound.length) {
+                  <p>Aucun paramètre n’est envoyé : le chemin suffit.</p>
+                }
+                @if (op.notFound.length) {
+                  <p class="error">Envoyé par le kiosque, mais absent du contrat lu : {{ op.notFound.join(', ') }}.</p>
+                }
+                @if (op.otherCount > 0) {
+                  <p class="hint">+ {{ op.otherCount }} autre(s) paramètre(s) possible(s) dans le contrat, non utilisé(s) ici.</p>
+                }
+                <p><strong>Réponses annoncées&nbsp;: </strong>
+                  @if (op.statuses.length) { <code>{{ op.statuses.join(' · ') }}</code> } @else { aucune }
+                  @if (!op.declaresErrors) { — aucune erreur n’est décrite&nbsp;: le contrat dit ce qui marche, pas ce qui peut échouer (403, 404, 429…). }</p>
+                <p><strong>Accès&nbsp;: </strong>
+                  @if (op.security.length) { il faut une clé, à envoyer dans <code>{{ op.security.join(', ') }}</code>{{ op.securityInherited ? ' (exigence valable pour tout le contrat)' : ' (exigence propre à cette opération)' }}. Le petit serveur du kiosque (le BFF) la garde de son côté. }
+                  @else { aucune sécurité déclarée. }</p>
+              </div>
+            </details>
+          }
+        </div>
+      }
+    </div>
+    <p><a id="show-contract" class="button-link" href="/oas.html" target="_blank" rel="noopener">Explorer le contrat complet dans Swagger Editor ↗</a></p>
+    <div class="notes">
+      <p><strong>Concret pour l’atelier&nbsp;:</strong> le contrat suffit pour démarrer vite le front et guider l’IA sur les bons endpoints.</p>
+      <p><strong>À vérifier systématiquement&nbsp;:</strong> même avec un contrat propre, on valide toujours les appels réels et les erreurs (403, 404, 429…).</p>
+    </div>
+    <section class="lab ai-lab" id="ai-lab" aria-labelledby="ai-lab-title">
+      <p class="eyebrow">Pratique · avec votre assistant IA</p>
+      <h3 id="ai-lab-title">Atelier IA : de l’appel curl à une page web qui appelle l’API</h3>
+      <p>Votre curl fonctionne. Demandez maintenant à votre assistant IA de le transformer en page web (un fichier HTML)&nbsp;: c’est <strong>la page elle-même</strong> qui appellera l’API, grâce à JavaScript. Vous n’écrivez pas le code&nbsp;: vous le faites écrire, puis vous le relisez.</p>
+      <div id="ai-tool" class="ai-tool">
+        <p class="eyebrow">L’outil de cet atelier</p>
+        <p><strong>{{ aiTool.product }}</strong> · modèle <strong>{{ aiTool.model }}</strong> · mode <strong>{{ aiTool.mode }}</strong></p>
+        <p class="hint">C’est l’outil d’IA validé par l’entreprise. Avec un autre assistant, vérifiez d’abord qu’il est autorisé pour cet usage&nbsp;: aucun secret ni donnée interne dans le prompt.</p>
+      </div>
+      <h4 class="sub-title">Trois mots pour relire la page que l’IA va écrire</h4>
+      <ul id="web-basics" class="basics">
+        @for (basic of webBasics; track basic.name) { <li><strong>{{ basic.name }}</strong>&nbsp;: {{ basic.role }}</li> }
+      </ul>
+      <h4 class="sub-title">Le déroulé</h4>
+      <ol class="ia-steps">
+        <li>Collez le <strong>prompt 1</strong> dans {{ aiTool.product }}, dans une conversation neuve.</li>
+        <li>Copiez le code obtenu dans un fichier <code>fiche-chartreux.html</code>, remplacez <code>{{ keyPlaceholder }}</code> par la clé, puis ouvrez le fichier dans votre navigateur. Ou, sans quitter le kiosque, collez-le dans la fenêtre d’essai (bouton «&nbsp;Tester la page de l’IA&nbsp;», sous les prompts).</li>
+        <li>Relisez le JavaScript&nbsp;: repérez le <code>fetch</code> (l’instruction qui envoie la demande à l’API), l’en-tête <code>x-api-key</code> et la ligne qui affiche la réponse.</li>
+        <li>Enchaînez avec les prompts 2 et 3 pour passer d’une fiche à toutes les races, puis à un zoom sur un chat en particulier.</li>
+      </ol>
+      <div id="prompt-key-box" class="callout">
+        <h5>Clé API injectée dans les prompts HTML</h5>
+        <p>Les prompts affichés ci-dessous incluent automatiquement la clé API active (champ en haut de l’application) ou, si vous préférez, la clé dédiée saisie ici.</p>
+        <label for="prompt-api-key">Votre clé API (non stockée, effacée à la fermeture du navigateur)</label>
+        <input id="prompt-api-key" type="password" autocomplete="off" spellcheck="false"
+          [ngModel]="promptApiKeyInput()" (ngModelChange)="setPromptApiKey($event)"
+          [attr.aria-invalid]="promptApiKeyInvalid() ? 'true' : 'false'" placeholder="Exemple : live_..." />
+        @if (promptApiKeyInvalid()) {
+          <p class="hint invalid">Format attendu&nbsp;: lettres/chiffres/_/-, au moins 8 caractères.</p>
+        } @else if (promptApiKeyReady()) {
+          <p class="hint">Clé dédiée prête&nbsp;: les prompts affichés et copiés utilisent cette valeur.</p>
+        } @else if (promptUsesHeaderKey()) {
+          <p class="hint">Clé d’en-tête détectée&nbsp;: les prompts HTML sont déjà pré-remplis automatiquement.</p>
+        }
+        <ul id="prompt-doc-links" class="doc-links">
+          @for (doc of apiKeyDocLinks; track doc.href) {
+            <li><a [href]="doc.href" target="_blank" rel="noopener noreferrer">{{ doc.label }} ↗</a></li>
+          }
+        </ul>
+        <p class="hint">Dans le contrat OpenAPI, la sécurité se lit dans <code>{{ apiKeyOasSection }}</code>.</p>
+      </div>
+      <ol class="prompt-list">
+        @for (prompt of aiPrompts; track prompt.id; let i = $index) {
+          <li class="prompt-card" [attr.data-prompt]="prompt.id">
+            <h4>{{ prompt.title }}</h4>
+            <p class="hint">{{ prompt.hint }}</p>
+            <pre class="prompt" [id]="'ai-prompt-' + (i + 1)" tabindex="0">{{ aiPromptText(prompt) }}</pre>
+            <button type="button" class="primary" [id]="'copy-ai-prompt-' + (i + 1)" (click)="copyAiPrompt(prompt)">Copier le prompt {{ i + 1 }}</button>
+            <div class="prompt-questions" [attr.aria-label]="'Questions de fin · ' + prompt.title">
+              <p class="eyebrow">Questions de fin de section</p>
+              <ul>
+                @for (question of prompt.questions; track question.level) {
+                  <li><span class="tag difficulty">{{ question.level }}</span><span>{{ question.text }}</span></li>
+                }
+              </ul>
+            </div>
+          </li>
+        }
+      </ol>
+      <div class="try-box" id="sandbox-try-fiche">
+        <div>
+          <p class="eyebrow">Essayer ici, sans enregistrer de fichier</p>
+          <p><strong>Le code de l’IA est prêt&nbsp;?</strong> Collez-le dans une fenêtre d’essai isolée du kiosque&nbsp;: la page s’affiche comme dans un navigateur, et un journal montre les appels qu’elle envoie à l’API.</p>
+        </div>
+        <button type="button" id="sandbox-open-fiche" class="primary" (click)="openSandbox('fiche')">Tester la page de l’IA ▶</button>
+      </div>
+      <div id="key-warning" class="callout warn">
+        <p><strong>Attention à la clé.</strong> Une page HTML qui appelle l’API directement doit connaître la clé&nbsp;: toute personne qui ouvre la page, ou qui presse F12, peut la lire. C’est acceptable pour un essai sur votre poste, jamais pour une page publiée. C’est la raison d’être du petit serveur (le BFF) de ce kiosque&nbsp;: la clé reste côté serveur.</p>
+        <p><strong>Quota.</strong> La formule gratuite de TheCatAPI est limitée à 10 requêtes par minute&nbsp;: si plusieurs personnes testent en même temps avec la même clé, certaines recevront un <code>429</code> («&nbsp;trop de demandes&nbsp;»). Patientez une minute&nbsp;: c’est un cas d’école de statut d’erreur.</p>
+      </div>
+    </section>
+    <p class="takeaway"><strong>À retenir.</strong> Une fois curl validé, l’IA peut accélérer la production d’une page web. Le contrat reste la référence, et la clé reste un secret.</p>
+    <ng-container *ngTemplateOutlet="panelNav; context: { $implicit: stepById('contrat') }"></ng-container>
+  </section>
+
+  <!-- Étape 3 · Concepts -->
+  <section class="panel" id="panel-appels" role="tabpanel" aria-labelledby="tab-appels" [hidden]="active() !== 'appels'">
+    <header class="panel-head">
+      <div class="panel-intro">
+        <ng-container *ngTemplateOutlet="meta; context: { $implicit: stepById('appels') }"></ng-container>
+        <h2>Les standards web permettent d’intégrer vite</h2>
+        <p class="lead">Ici, on pose tous les concepts utiles en pratique&nbsp;: <strong>API first</strong>, <strong>Richardson N2</strong>, notion de <strong>SPA</strong> et distinction <strong>front / BFF</strong>. Ce sont des standards simples à brancher rapidement, loin d’intégrations lourdes type SOAP.</p>
+        <ng-container *ngTemplateOutlet="goal; context: { $implicit: stepById('appels') }"></ng-container>
+      </div>
+      <ng-container *ngTemplateOutlet="missionList; context: { $implicit: stepById('appels') }"></ng-container>
+    </header>
+    <ng-container *ngTemplateOutlet="inShort; context: { $implicit: stepById('appels') }"></ng-container>
+    <section class="api-first" aria-labelledby="af-title">
+      <p class="eyebrow">Du contrat au code, en quatre temps</p>
+      <h3 id="af-title">Le contrat vient avant le code</h3>
+      <ol id="api-first-steps" class="af-steps">
+        @for (step of apiFirstSteps; track step.title; let i = $index) {
+          <li><span class="af-num" aria-hidden="true">{{ i + 1 }}</span><div><strong>{{ step.title }}</strong><p>{{ step.text }}</p></div></li>
+        }
+      </ol>
+      <p class="hint"><strong>À l’inverse, en «&nbsp;code first&nbsp;»</strong> (on écrit d’abord le serveur)&nbsp;: le contrat n’est qu’un sous-produit, parfois oublié. Les équipes qui utilisent l’API doivent alors attendre que le serveur existe pour commencer, puis s’adapter à ce qu’il fait.</p>
+    </section>
+    <section class="richardson" aria-labelledby="rich-title">
+      <p class="eyebrow">Un repère de maturité : les niveaux de Richardson</p>
+      <h3 id="rich-title">Quatre niveaux pour une API web : nous visons le niveau 2</h3>
+      <p>Le «&nbsp;modèle de Richardson&nbsp;» (du nom de son auteur) classe les API web en quatre niveaux, du plus rudimentaire au plus abouti. Pour chacun, imaginez un guichet&nbsp;:</p>
+      <ol id="richardson-ladder" class="ladder">
+        @for (level of richardson; track level.level) {
+          <li class="rung" [class.chosen]="level.chosen" [attr.data-level]="level.level">
+            <p class="rung-top"><span class="rung-level">Niveau {{ level.level }}</span>@if (level.chosen) { <span class="rung-flag">Notre choix</span> }</p>
+            <h4>{{ level.name }}</h4>
+            <p class="rung-plain">{{ level.plain }}</p>
+            <p class="rung-idea">{{ level.idea }}</p>
+            <code class="rung-example">{{ level.example }}</code>
+          </li>
+        }
+      </ol>
+      <p class="hint"><strong>Pourquoi le niveau 2&nbsp;?</strong> Il suffit à rendre l’API compréhensible par une personne, un outil ou une IA&nbsp;: chaque ressource a son adresse, chaque méthode son sens, chaque statut son résultat. Le niveau 3 demande plus de conception, pour un bénéfice que peu d’applications exploitent.</p>
+      <details id="tech-richardson" class="tech" [open]="isTechOpen('richardson')" (toggle)="onTechToggle('richardson', $event)">
+        <summary><span class="tech-tag">Côté technique</span> Ce que nous constatons… et ce que nous ne prétendons pas</summary>
+        <p>Dans les réponses vues ici, nous ne trouvons pas de liens vers des actions possibles&nbsp;: nous ne constatons donc pas de niveau 3, sans prétendre avoir audité toute l’API. Les exemples des niveaux 0 et 3 sont fictifs, ceux des niveaux 1 et 2 sont de vrais appels.</p>
+      </details>
+      <p class="hint">Vous l’avez déjà pratiqué à l’étape 1&nbsp;: <code>GET /breeds/abys</code> sans clé donne un 403, <code>GET /breeds/char</code> avec la clé donne un 200. Dans la fenêtre «&nbsp;Jouer&nbsp;», saisissez un identifiant inconnu comme <code>zzz</code> pour obtenir un 404.
+        <button type="button" id="back-to-lab" class="text-button" (click)="goTo('besoin')">Retourner à l’atelier curl</button></p>
+    </section>
+    <div class="n2-legend" role="group" aria-label="Trois mots pour lire un appel">
+      <p><strong>Ressource = l’adresse</strong> Le chemin désigne la chose demandée&nbsp;: <code>/breeds</code> (les races), <code>/breeds/&#123;id&#125;</code> (une race), <code>/images/search</code> (des photos).</p>
+      <p><strong>Méthode = le verbe</strong> <code>GET</code> lit. <code>POST</code> écrit, par exemple pour créer un favori.</p>
+      <p><strong>Statut = le résultat</strong> <code>200</code> ça a marché · <code>403</code> accès refusé · <code>404</code> introuvable · <code>429</code> trop de demandes.</p>
+    </div>
+    <section class="inspector inspector-alone" aria-labelledby="inspector-title">
+        <p class="eyebrow">Les coulisses, en direct</p><h3 id="inspector-title">L’API à la loupe</h3>
+        <p id="operation-help" class="operation-help">{{ operationHelp(currentLog()) }}</p>
+        <div class="flow"><span>Vous</span> → <span>Angular</span> → <span>BFF Quarkus</span> → <strong>API</strong></div>
+        <p class="hint">Vous cliquez&nbsp;; l’écran du kiosque (Angular) demande au petit serveur du kiosque (le <button type="button" class="jargon" (click)="openJargon('bff')">BFF</button>), et lui seul appelle l’API, en gardant la clé secrète. Ce qui s’affiche ici, ce sont les demandes réellement envoyées.</p>
+        <ol id="requests" class="requests" aria-label="Historique des appels, du plus récent au plus ancien">
+          @for (log of api.logs(); track log.id) {
+            <li><button class="request-button" [class.active]="api.selectedId() === log.id" (click)="selectLog(log)">
+              <span class="method">GET</span><span class="request-path">{{ log.mode === 'demo' ? '[SIM] ' : '' }}{{ log.path }}</span>
+              <span class="status" [class.failed]="failedStatus(log)">{{ log.status }} @if (log.milliseconds !== undefined) { · {{ log.milliseconds }} ms }</span>
+            </button></li>
+          }
+        </ol>
+        <div class="response-header"><strong id="response-title">Réponse {{ currentLog()?.mode === 'demo' ? 'simulée' : 'réelle' }} · {{ currentLog()?.status }}</strong>
+          <button id="copy-json" class="text-button" (click)="copy(fieldValue(currentLog()?.body))">Copier</button>
+        </div>
+        <p id="request-url" class="request-url">
+          @if (currentLog(); as log) { {{ log.mode === 'demo' ? 'SIMULATION LOCALE · ' : apiBase() }}{{ log.path }} }
+        </p>
+        <pre id="response" tabindex="0">{{ currentLog()?.body === undefined ? 'Appel en cours…' : (currentLog()?.body | json) }}</pre>
+        <details class="pedagogy"><summary>Comment lire cet échange ?</summary>
+          <p><strong>Chemin</strong>&nbsp;: l’adresse de la chose demandée (la ressource). <strong>Paramètres</strong>&nbsp;: ce qui suit le «&nbsp;?&nbsp;», par exemple <code>q=siam</code> pour chercher «&nbsp;siam&nbsp;». <strong>JSON</strong>&nbsp;: le format texte dans lequel l’API renvoie ses données.</p>
+          <p><strong>200</strong>&nbsp;: ça a marché. <strong>403</strong>&nbsp;: accès refusé (clé absente ou refusée). <strong>404</strong>&nbsp;: introuvable. <strong>429</strong>&nbsp;: trop de demandes. <strong>5xx</strong>&nbsp;: panne côté serveur ou intermédiaire.</p>
+          <p>Le petit serveur du kiosque ne fait que lire (<code>GET</code>). Le favori en <code>POST</code> reste un exemple, jamais exécuté.</p>
+        </details>
+    </section>
+    <p class="takeaway"><strong>À retenir.</strong> Une API renvoie des données, pas un écran&nbsp;: c’est l’application (ici Angular) qui compose les cartes. Le tri par pays n’est pas une nouvelle fonction de l’API&nbsp;: c’est un usage des données déjà reçues. Le même service pourrait donc alimenter une autre application, un portail ou un outil métier.</p>
+    <ng-container *ngTemplateOutlet="panelNav; context: { $implicit: stepById('appels') }"></ng-container>
+  </section>
+
+  <!-- Étape 4 · Réutilisation métier -->
+  <section class="panel" id="panel-ia" role="tabpanel" aria-labelledby="tab-ia" [hidden]="active() !== 'ia'">
+    <header class="panel-head">
+      <div class="panel-intro">
+        <ng-container *ngTemplateOutlet="meta; context: { $implicit: stepById('ia') }"></ng-container>
+        <h2>Une API sert des besoins métier, pas un seul écran</h2>
+        <p class="lead">Même API, usage différent&nbsp;: ici un vote partagé pour élire le chat de la DSIN. Une API claire et performante permet ce type de réutilisation rapide.</p>
+        <ng-container *ngTemplateOutlet="goal; context: { $implicit: stepById('ia') }"></ng-container>
+      </div>
+      <ng-container *ngTemplateOutlet="missionList; context: { $implicit: stepById('ia') }"></ng-container>
+    </header>
+    <ng-container *ngTemplateOutlet="inShort; context: { $implicit: stepById('ia') }"></ng-container>
+    @if (!breedChoices().length) {
+      <div id="ia-empty" class="empty">
+        @if (loading()) { Chargement du catalogue… } @else { Le catalogue n’est pas chargé : l’application de vote ne peut pas afficher les chats. }
+        <p><button type="button" class="quiet" (click)="goTo('appels')">Retourner à l’étape « Les appels »</button></p>
+      </div>
+    } @else {
+      <section class="vote-shared" aria-labelledby="vote-title-phase4">
+        <p class="eyebrow">Autre application</p>
+        <h3 id="vote-title-phase4">Vote du chat de la DSIN</h3>
+        <p>Même API, autre usage métier&nbsp;: chaque participant vote, le résultat est partagé entre tous les navigateurs connectés au même kiosque.</p>
+        <div class="vote-controls">
+          <button type="button" class="primary" (click)="openVoteApp()">Ouvrir l’application de vote</button>
+          <button type="button" class="quiet" [disabled]="voteLoading()" (click)="loadVotes()">Actualiser le classement</button>
+          <button type="button" class="quiet" [disabled]="voteLoading()" (click)="resetVotes()">Remise à zéro</button>
+        </div>
+        @if (voteError()) { <p class="error" role="alert">{{ voteError() }}</p> }
+        @if (voteBoard(); as board) {
+          <p class="hint">Total des votes&nbsp;: <strong>{{ board.totalVotes }}</strong>@if (voteUpdatedAt()) { · dernière mise à jour&nbsp;: {{ voteUpdatedAt() }} }.</p>
+        }
+        @if (voteRows().length) {
+          <div class="vote-table-wrap">
+            <table class="vote-table">
+              <thead><tr><th scope="col">#</th><th scope="col">Race</th><th scope="col">Pays</th><th scope="col">Votes</th></tr></thead>
+              <tbody>
+                @for (row of voteRows(); track row.id; let index = $index) {
+                  <tr><td>{{ index + 1 }}</td><th scope="row">{{ row.name }}</th><td>{{ row.country }}</td><td>{{ row.count }}</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="hint">Aucun vote enregistré pour le moment.</p>
+        }
+        <p class="hint">Dans la modale&nbsp;: <strong>clic gauche = vote</strong>, <strong>clic droit = détail</strong>.</p>
+      </section>
+    }
+    <p class="takeaway"><strong>À retenir.</strong> Une API bien conçue sert plusieurs applications. Ici, la même base alimente une application de vote partagée pour la DSIN.</p>
+    <ng-container *ngTemplateOutlet="panelNav; context: { $implicit: stepById('ia') }"></ng-container>
+  </section>
+
+  <!-- Étape 5 · Conclusion -->
+  <section class="panel" id="panel-bilan" role="tabpanel" aria-labelledby="tab-bilan" [hidden]="active() !== 'bilan'">
+    <header class="panel-head">
+      <div class="panel-intro">
+        <ng-container *ngTemplateOutlet="meta; context: { $implicit: stepById('bilan') }"></ng-container>
+        <h2>Conclusion de l’atelier</h2>
+        <p class="lead">Dernière phase&nbsp;: on synthétise ce que vous avez vu et ce que vous pouvez réutiliser tout de suite dans vos projets.</p>
+        <ng-container *ngTemplateOutlet="goal; context: { $implicit: stepById('bilan') }"></ng-container>
+      </div>
+      <ng-container *ngTemplateOutlet="missionList; context: { $implicit: stepById('bilan') }"></ng-container>
+    </header>
+    <ng-container *ngTemplateOutlet="inShort; context: { $implicit: stepById('bilan') }"></ng-container>
+    <h3 class="block-title">Les 5 messages à emporter</h3>
+    <div class="recap">
+      <article>
+        <p class="eyebrow">Phase 1 · découverte API</p>
+        <p>Sans clé l’API refuse (403), avec clé elle répond (200)&nbsp;: ce n’est pas de la magie, c’est un comportement normal et lisible.</p>
+        <p class="practiced">Dans ce parcours&nbsp;: appels curl et lecture du JSON.</p>
+        <button type="button" class="text-button" (click)="goTo('besoin')">Revoir l’étape 1</button>
+      </article>
+      <article>
+        <p class="eyebrow">Phase 2 · IA appliquée</p>
+        <p>Copilot Covéa transforme l’appel curl en page web exploitable, à condition de relire le code généré.</p>
+        <p class="practiced">Dans ce parcours&nbsp;: prompts HTML et test immédiat.</p>
+        <button type="button" class="text-button" (click)="goTo('contrat')">Revoir l’étape 2</button>
+      </article>
+      <article>
+        <p class="eyebrow">Phase 3 · standards web</p>
+        <p>DDD, API first, Richardson N2 et SPA accélèrent l’intégration quand front et BFF sont bien séparés.</p>
+        <p class="practiced">Dans ce parcours&nbsp;: manipulations + lecture des appels.</p>
+        <button type="button" class="text-button" (click)="goTo('appels')">Revoir l’étape 3</button>
+      </article>
+      <article>
+        <p class="eyebrow">Phase 4 · valeur métier</p>
+        <p>La même API alimente une autre application&nbsp;: le vote partagé du chat DSIN.</p>
+        <p class="practiced">Dans ce parcours&nbsp;: ouverture de la modale, vote en un clic, classement commun.</p>
+        <button type="button" class="text-button" (click)="goTo('ia')">Revoir l’étape 4</button>
+      </article>
+      <article>
+        <p class="eyebrow">Phase 5 · conclusion</p>
+        <p>On repart avec des repères concrets&nbsp;: contrat d’abord, standards web, séparation front/BFF, API réutilisable.</p>
+        <p class="practiced">Dans ce parcours&nbsp;: synthèse finale et validation de la conclusion.</p>
+        <button type="button" class="text-button" (click)="goTo('bilan')">Revoir la conclusion</button>
+      </article>
+    </div>
+    <p class="takeaway"><strong>Et chez nous&nbsp;?</strong> Un service peut «&nbsp;envelopper&nbsp;» une capacité existante&nbsp;: la modernisation peut se faire par étapes, sans tout réécrire d’un coup. Moderniser, ce n’est pas simplement repeindre le vieux chat&nbsp;: c’est rendre ses capacités utilisables sans devoir ouvrir toute la cuisine.</p>
+    @if (journeyProgress().done === journeyProgress().total) {
+      <p id="journey-complete" class="notice" role="status">Bravo : les {{ journeyProgress().total }} missions sont réussies. Vous avez appelé une API et vous savez expliquer ce qu’elle apporte.</p>
+    }
+    <p><button type="button" class="primary" (click)="confirmConclusion()">Valider la conclusion</button></p>
+    <p class="closing">« Le contrat décrit les possibilités ; nos applications et nos outils les exploitent. »</p>
+    <div class="panel-nav">
+      <button type="button" class="quiet" (click)="goTo('ia')">← Étape précédente : Autre application</button>
+      <button type="button" id="restart-end" class="primary" (click)="restartJourney()">Recommencer le parcours</button>
+    </div>
+  </section>
+
+  <footer>Kiosque DSIN / mIAoudernisation · écran Angular (le front) · petit serveur Java Quarkus (le BFF) · contrat fourni par TheCatAPI. Les traits de race ne prédisent pas le comportement d’un individu.</footer>
+</main>
+
+<ng-template #meta let-step>
+  <p class="eyebrow">Étape {{ step.number }} sur {{ steps.length }} · {{ step.themePlain }} · ≈ {{ step.minutes }} min</p>
+</ng-template>
+<ng-template #goal let-step>
+  <p class="goal"><span class="goal-label">Objectif</span> {{ step.goal }}</p>
+</ng-template>
+<ng-template #inShort let-step>
+  @let plain = plainOf(step.id);
+  <section class="in-short" [id]="'in-short-' + step.id" [attr.aria-labelledby]="'in-short-title-' + step.id">
+    <div class="in-short-main">
+      <p class="eyebrow">En deux mots</p>
+      <h3 [id]="'in-short-title-' + step.id">{{ plain.question }}</h3>
+      <p class="in-short-text">{{ plain.inShort }}</p>
+      <p class="in-short-line in-short-analogy"><strong>Comme dans la vie</strong> {{ plain.analogy }}</p>
+      <p class="in-short-line in-short-do"><strong>Ce que vous allez faire</strong> {{ plain.youWillDo }}</p>
+    </div>
+    <div class="in-short-words">
+      <p class="eyebrow">Mots à connaître</p>
+      <dl>
+        @for (wordId of plain.words; track wordId) {
+          @if (jargonById(wordId); as entry) {
+            <div><dt>{{ entry.term }}</dt><dd>{{ entry.plain }}</dd></div>
+          }
+        }
+      </dl>
+      <button type="button" class="text-button" (click)="openJargon()">Voir tout le jargon</button>
+    </div>
+  </section>
+</ng-template>
+<ng-template #missionList let-step>
+  @let plain = plainOf(step.id);
+  <aside class="missions" [attr.aria-label]="'Missions de l’étape ' + step.number">
+    <p class="eyebrow">{{ step.missions.length > 1 ? 'Missions' : 'Mission' }}</p>
+    <ul>
+      @for (mission of step.missions; track mission.id) {
+        <li [class.done]="isDone(mission.id)" [attr.data-mission]="mission.id">
+          <span class="mark" aria-hidden="true">{{ isDone(mission.id) ? '✓' : '' }}</span>
+          <span>{{ mission.label }}<span class="sr-only"> : {{ isDone(mission.id) ? 'réussie' : 'à faire' }}</span></span>
+        </li>
+      }
+    </ul>
+    <div class="step-questions" [attr.aria-label]="'Questions de l’étape ' + step.number">
+      <p class="eyebrow">Questions selon l’interlocuteur</p>
+      <ul>
+        @for (question of plain.questions; track question.text; let index = $index) {
+          @let answerOpen = isQuestionAnswerRevealed(step.id, index);
+          <li>
+            <span class="tag difficulty">{{ question.level }}</span>
+            <span class="question-body">
+              <span><span class="tag">{{ question.audience }}</span> {{ question.text }}</span>
+              <button type="button" class="text-button question-toggle"
+                (click)="toggleQuestionAnswer(step.id, index)"
+                [attr.aria-expanded]="answerOpen"
+                [attr.aria-controls]="'step-answer-' + step.id + '-' + index">
+                {{ answerOpen ? 'Masquer la réponse' : 'Voir la réponse' }}
+              </button>
+              @if (answerOpen) {
+                <small class="question-answer" [id]="'step-answer-' + step.id + '-' + index"><strong>Réponse attendue :</strong> {{ question.answer }}</small>
+              }
+            </span>
+          </li>
+        }
+      </ul>
+    </div>
+  </aside>
+</ng-template>
+<ng-template #panelNav let-step>
+  <div class="panel-nav">
+    @if (previousStep(step.id); as previous) {
+      <button type="button" class="quiet" (click)="goTo(previous.id)">← Étape précédente : {{ previous.title }}</button>
+    } @else { <span></span> }
+    @if (nextStep(step.id); as next) {
+      <button type="button" class="primary" (click)="goTo(next.id)">Étape suivante : {{ next.title }} →</button>
+    }
+  </div>
+</ng-template>
+
+<dialog #detailDialog id="detail-dialog" aria-labelledby="detail-title">
+  <div class="dialog-top"><span class="eyebrow">DOSSIER DE CANDIDATURE</span><button id="close-detail" class="quiet" (click)="closeDetail()">Fermer ✕</button></div>
+  <h2 id="detail-title">{{ selected()?.name }}</h2>
+  <div id="detail-body">
+    @if (detailLoading()) { <p>Appels en cours : fiche de race et images…</p> }
+    @if (detailError()) { <p class="error" role="alert">{{ detailError() }}</p> }
+    @if (detail(); as breed) {
+      @if (mode() === 'demo') { <p class="notice simulated">FICHE SIMULÉE — données éditoriales fabriquées, pas une réponse réelle.</p> }
+      <p class="hint">Deux ressources composent cette fiche : GET /breeds/&#123;id&#125; + GET /images/search?breed_ids=…</p>
+      <div class="detail-grid">
+        <div>
+          @if (selectedPhoto(); as url) {
+            @if (!failedImages().has(url)) { <img class="detail-photo" [src]="photoSrc(url, 'med')" [alt]="breed.name" referrerpolicy="no-referrer" (error)="photoFailed(url, 'med')"> }
+            @else { <div class="placeholder"><span>(=^･ω･^=)</span><small>Image indisponible · chargement échoué</small></div> }
+          } @else {
+            <div class="placeholder"><span>(=^･ω･^=)</span><small>{{ mode() === 'demo' ? 'Illustration · jeu simulé' : 'Aucune photo reçue pour cette race' }}</small></div>
+          }
+          @if (photos().length > 1) {
+            <div class="gallery">@for (photo of photos(); track photo.url; let i = $index) {
+              <button [attr.aria-label]="'Afficher la photo ' + (i + 1)" (click)="selectedPhoto.set(photo.url)"><img [src]="photoSrc(photo.url, 'thumb')" [alt]="'Photo ' + (i + 1)" referrerpolicy="no-referrer" (error)="photoFailed(photo.url, 'thumb')"></button>
+            }</div>
+          }
+          @if (imagesError()) { <p class="error" role="alert">Images non chargées : {{ imagesError() }}</p> }
+        </div>
+        <div>
+          <p>{{ breed.description || 'Description non renseignée.' }}</p>
+          <div class="facts">
+            <div class="fact"><small>Pays d’origine</small>{{ countryName(breed) }}</div>
+            <div class="fact"><small>Espérance de vie (ans)</small>{{ breed.lifeSpan || 'Non renseigné' }}</div>
+            <div class="fact"><small>Poids (kg)</small>{{ breed.weight || 'Non renseigné' }}</div>
+            <div class="fact"><small>Tempérament</small>{{ breed.temperament || 'Non renseigné' }}</div>
+          </div>
+          <div class="metrics">@for (metric of metrics(); track metric.label) {
+            <div class="metric"><span>{{ metric.label }}</span>
+              @if (metric.score !== null) { <span>{{ metric.score }}/5</span><meter min="1" max="5" [value]="metric.score" [attr.aria-label]="metric.label + ' : ' + metric.score + ' sur 5'"></meter> }
+              @else { <span>Non renseigné</span> }
+            </div>
+          }</div>
+          <p class="hint">Indicateurs du fournisseur, pas une évaluation individuelle ni un conseil d’adoption.</p>
+        </div>
+      </div>
+      <details class="all-fields"><summary>Voir les échanges API de cette fiche</summary>
+        @for (log of detailLogs(); track log.id) { <p>{{ log.mode === 'demo' ? 'SIMULÉ · ' : '' }}GET {{ log.path }} → {{ log.status }} · {{ log.milliseconds }} ms</p><pre>{{ log.body | json }}</pre> }
+      </details>
+      <details class="all-fields"><summary>Toutes les données de race renvoyées par l’API</summary>
+        <table class="field-table"><tbody>@for (field of detailFields(); track field[0]) { <tr><th scope="row">{{ field[0] }}</th><td>{{ fieldValue(field[1]) }}</td></tr> }</tbody></table>
+      </details>
+      <section class="next-box">
+        <p>Ces données peuvent aussi nourrir une IA : à l’étape suivante, vous en tirerez un prompt.</p>
+        <button type="button" id="prepare-ai" class="primary" (click)="prepareAi()">Préparer le prompt IA →</button>
+      </section>
+    }
+  </div>
+</dialog>
+<dialog #curlDialog id="curl-dialog" aria-labelledby="curl-title" (close)="onCurlClosed()">
+  <div class="dialog-top">
+    <span class="eyebrow">ATELIER CURL · {{ curlScenario() === 'sans-cle' ? 'SANS CLÉ' : 'AVEC LA CLÉ' }}</span>
+    <button type="button" id="curl-close" class="quiet" (click)="closeCurl()">Fermer ✕</button>
+  </div>
+  <h2 id="curl-title">{{ curlScenario() === 'sans-cle' ? 'Que répond l’API sans clé ?' : 'Que répond l’API avec la clé ?' }}</h2>
+  @if (mode() === 'demo') {
+    <p class="notice simulated">DONNÉES SIMULÉES — aucun appel n’est fait à TheCatAPI&nbsp;: le kiosque fabrique la réponse.</p>
+  } @else if (curlScenario() === 'avec-cle' && !hasAnyApiKey()) {
+    <p id="curl-nokey-warning" class="error" role="alert">Aucune clé n’est configurée (serveur ou en-tête)&nbsp;: l’appel va échouer en 403.</p>
+  }
+  <p class="hint">Ce que vous taperiez dans votre terminal&nbsp;:</p>
+  <div class="cmd-box">
+    <pre id="curl-command" class="cmd" tabindex="0">{{ curlCommandText() }}</pre>
+    <div class="cmd-actions"><button type="button" id="curl-copy" class="quiet" (click)="copy(curlCommandText())">Copier</button></div>
+  </div>
+  <div class="curl-controls">
+    <div class="curl-id-field">
+      <label for="curl-id">Identifiant de la race&nbsp;: <code>/breeds/…</code></label>
+      <input id="curl-id" type="text" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="curl-id-help"
+        [attr.aria-invalid]="!curlIdValid()" [ngModel]="curlId()" (ngModelChange)="setCurlId($event)" (keydown.enter)="playCurl()">
+    </div>
+    <button type="button" id="curl-play" class="primary" autofocus [disabled]="!curlIdValid() || curlRunning()" (click)="playCurl()">{{ curlRunning() ? 'Appel en cours…' : 'Jouer ▶' }}</button>
+  </div>
+  <p id="curl-id-help" class="hint" [class.invalid]="!curlIdValid()">Lettres, chiffres, - et _ ; 40 caractères au plus. Essayez <code>abys</code>, <code>char</code>, <code>beng</code>… ou un identifiant inconnu.</p>
+  <div id="curl-output" aria-live="polite">
+    @if (curlResult(); as run) {
+      <div id="curl-result" class="curl-result" [attr.data-tone]="curlReading()?.tone">
+        <p class="curl-status-row">
+          <strong id="curl-status" class="curl-status">{{ statusLine(run.status) }}</strong>
+          <span class="hint">{{ run.milliseconds }} ms</span>
+          @if (run.simulated) { <span class="tag required">SIMULÉ</span> }
+        </p>
+        @if (curlReading(); as reading) { <p id="curl-reading" class="curl-reading">{{ reading.text }}</p> }
+        @if (run.body !== null && run.body !== undefined) { <pre id="curl-body" tabindex="0">{{ curlBody() }}</pre> }
+        @if (curlSucceeded()) {
+          <p id="curl-success" class="notice">✓ Mission validée&nbsp;: {{ run.scenario === 'sans-cle' ? 'le refus 403 était bien le résultat attendu.' : 'la clé est acceptée et l’API répond.' }}</p>
+        }
+      </div>
+    }
+  </div>
+  <p class="hint">Astuce&nbsp;: ajoutez <code>-i</code> à votre commande pour voir aussi la ligne de statut et les en-têtes de la réponse.</p>
+</dialog>
+<dialog #voteDialog id="vote-dialog" aria-labelledby="vote-dialog-title" (close)="onVoteDialogClosed()">
+  <div class="dialog-top">
+    <span class="eyebrow">APPLICATION DE VOTE</span>
+    <button type="button" id="vote-close" class="quiet" (click)="closeVoteApp()">Fermer ✕</button>
+  </div>
+  <h2 id="vote-dialog-title">Votez en un clic gauche, détail en clic droit</h2>
+  <p>Chaque vote est partagé en direct sur ce kiosque. Faites un clic gauche sur la vignette pour voter, ou un clic droit pour ouvrir la fiche détaillée.</p>
+  @if (voteSuccess()) { <p id="vote-success" class="notice" role="status">{{ voteSuccess() }}</p> }
+  @if (voteError()) { <p id="vote-error" class="error" role="alert">{{ voteError() }}</p> }
+  <div class="vote-gallery" [attr.aria-busy]="voteLoading()">
+    @for (breed of breedChoices(); track breed.id) {
+      <button type="button" class="vote-cat-card"
+        (click)="voteForBreed(breed, $event)"
+        (contextmenu)="openVoteDetail(breed, $event)"
+        [disabled]="voteLoading()">
+        @if (breed.imageUrl && !failedImages().has(breed.imageUrl)) {
+          <img [src]="photoSrc(breed.imageUrl, 'thumb')" [alt]="breed.name" loading="lazy" decoding="async" referrerpolicy="no-referrer" (error)="photoFailed(breed.imageUrl, 'thumb')">
+        } @else {
+          <div class="placeholder"><span>(=^･ω･^=)</span><small>Image indisponible</small></div>
+        }
+        <span class="vote-cat-name">{{ breed.name }}</span>
+        <small class="vote-cat-country">{{ countryName(breed) }}</small>
+      </button>
+    }
+  </div>
+  <div class="vote-dialog-actions">
+    <button type="button" class="quiet" [disabled]="voteLoading()" (click)="loadVotes()">Actualiser le classement</button>
+    <button type="button" class="quiet" [disabled]="voteLoading()" (click)="resetVotes()">Remise à zéro</button>
+  </div>
+</dialog>
+<dialog #sandboxDialog id="sandbox-dialog" aria-labelledby="sandbox-title" (close)="onSandboxClosed()">
+  <div class="dialog-top">
+    <span class="eyebrow">{{ sandboxInfo().eyebrow }}</span>
+    <button type="button" id="sandbox-close" class="quiet" (click)="closeSandbox()">Fermer ✕</button>
+  </div>
+  <h2 id="sandbox-title" tabindex="-1" autofocus>{{ sandboxInfo().title }}</h2>
+  <p>Collez le code HTML que {{ aiTool.product }} vous a donné (ou chargez l’exemple), puis lancez-le&nbsp;: la page s’affiche dans un navigateur miniature, et le journal montre chaque appel qu’elle envoie à l’API.</p>
+  @if (mode() === 'demo') {
+    <p id="sandbox-simulated" class="notice simulated">DONNÉES SIMULÉES — aucun appel n’est fait à TheCatAPI&nbsp;: le kiosque fabrique les réponses à partir de dix races d’exemple, sans photo. Aucune vraie clé n’est nécessaire.</p>
+  } @else {
+    <p id="sandbox-live" class="notice">APPELS RÉELS — la page interroge TheCatAPI depuis votre navigateur, avec la clé que vous saisissez ci-dessous. Chaque appel compte dans le quota de 10 requêtes par minute.</p>
+  }
+  <div class="sandbox-grid">
+    <div class="sandbox-editor">
+      <label for="sandbox-code">Le code de la page <code>{{ sandboxInfo().file }}</code></label>
+      <textarea id="sandbox-code" rows="16" wrap="off" spellcheck="false" autocomplete="off" autocapitalize="off" [attr.maxlength]="sandboxMax"
+        placeholder="Collez ici le code HTML généré par l’IA, ou chargez l’exemple"
+        [ngModel]="sandboxCode()" (ngModelChange)="setSandboxCode($event)"></textarea>
+      <p class="hint">{{ sandboxCode().length }} / {{ sandboxMax }} caractères.</p>
+      @if (sandboxSecretWarning()) {
+        <p id="sandbox-secret-warning" class="callout warn"><strong>Une clé semble écrite en clair dans ce code.</strong> Remplacez-la par <code>{{ keyPlaceholder }}</code>&nbsp;: le kiosque la remplira le temps de l’essai, sans la garder.</p>
+      }
+      @if (sandboxNeedsKey()) {
+        <div id="sandbox-key-block" class="sandbox-key">
+          <label for="sandbox-key">Clé d’API de l’essai</label>
+          <input id="sandbox-key" type="password" maxlength="120" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="sandbox-key-help"
+            [attr.aria-invalid]="sandboxKeyInvalid()" [ngModel]="sandboxKey()" (ngModelChange)="sandboxKey.set($event)" (keydown.enter)="runSandbox()">
+          <p id="sandbox-key-help" class="hint" [class.invalid]="sandboxKeyInvalid()">Elle prend la place de <code>{{ keyPlaceholder }}</code> le temps de l’essai. Elle reste dans cette fenêtre&nbsp;: jamais enregistrée, jamais envoyée au serveur du kiosque, effacée à la fermeture. Lettres, chiffres, - et _&nbsp;; 8 caractères au moins.</p>
+        </div>
+      }
+      <div class="cmd-actions sandbox-actions">
+        <button type="button" id="sandbox-run" class="primary" [disabled]="!sandboxCanRun()" (click)="runSandbox()">{{ sandboxState() === 'loading' ? 'Préparation…' : sandboxState() === 'running' ? 'Relancer ↻' : 'Exécuter ▶' }}</button>
+        <button type="button" id="sandbox-sample" class="quiet" (click)="loadSandboxSample()">Charger l’exemple</button>
+        <button type="button" id="sandbox-clear" class="quiet" [disabled]="!sandboxCode()" (click)="clearSandbox()">Effacer</button>
+      </div>
+    </div>
+    <div class="sandbox-preview">
+      <p class="eyebrow">LE RÉSULTAT, COMME DANS UN NAVIGATEUR</p>
+      <div class="browser">
+        <div class="browser-bar">
+          <span class="browser-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span id="sandbox-address" class="browser-address">{{ sandboxInfo().file }}</span>
+        </div>
+        <div #sandboxStage id="sandbox-stage" class="browser-stage" [hidden]="sandboxState() !== 'running'"></div>
+        @if (sandboxState() === 'idle') {
+          <p id="sandbox-empty" class="browser-empty">Aucune page lancée. Chargez l’exemple ou collez votre code, puis cliquez sur «&nbsp;Exécuter&nbsp;».</p>
+        } @else if (sandboxState() === 'loading') {
+          <p id="sandbox-loading" class="browser-empty">Préparation de la fenêtre isolée…</p>
+        }
+      </div>
+    </div>
+  </div>
+  <section class="sandbox-journal" aria-labelledby="sandbox-journal-title">
+    <h3 id="sandbox-journal-title" class="sub-title">Les appels faits par la page</h3>
+    <div aria-live="polite">
+      @if (sandboxCalls().length) {
+        <ol id="sandbox-calls" class="sandbox-calls">
+          @for (call of sandboxCalls(); track call.n) {
+            <li [attr.data-tone]="call.status >= 200 && call.status < 300 ? 'ok' : 'erreur'">
+              <span class="call-method">{{ call.method }}</span>
+              <code class="call-url">{{ call.url }}</code>
+              <strong class="call-status">{{ statusLine(call.status) }}</strong>
+              <span class="call-ms">{{ call.ms }} ms</span>
+            </li>
+          }
+        </ol>
+        @if (sandboxLastReading(); as reading) { <p id="sandbox-reading" class="curl-reading" [attr.data-tone]="reading.tone">{{ reading.text }}</p> }
+      } @else {
+        <p id="sandbox-no-calls" class="hint">{{ sandboxState() === 'running' ? 'La page n’a encore appelé aucune API.' : 'Le journal se remplit dès que la page est lancée.' }}</p>
+      }
+      @if (sandboxError(); as message) {
+        <p id="sandbox-error" class="error" role="alert">{{ message }}</p>
+        @if (sandboxErrorHint(); as advice) { <p id="sandbox-error-hint" class="hint">{{ advice }}</p> }
+      }
+    </div>
+  </section>
+  <aside id="sandbox-safety" class="callout">
+    <p><strong>Comment le kiosque reste protégé.</strong> La page tourne dans un cadre <em>isolé</em>&nbsp;: elle ne voit ni le kiosque, ni ses cookies, ni sa mémoire&nbsp;; elle ne peut ni ouvrir de fenêtre, ni envoyer de formulaire, ni aller sur un autre site&nbsp;; et ses requêtes réseau ne peuvent viser que thecatapi.com.</p>
+    <p><strong>Ce qui reste à vous.</strong> Ne collez que du code relu&nbsp;: une page peut toujours afficher du faux ou consommer votre quota. Pour un essai, préférez une clé de test, à renouveler après la session.</p>
+  </aside>
+</dialog>
+<dialog #jargonDialog id="jargon-dialog" aria-labelledby="jargon-title" (close)="onJargonClosed()">
+  <div class="dialog-top">
+    <span class="eyebrow">Pour tout le monde</span>
+    <button type="button" id="jargon-close" class="quiet" (click)="closeJargon()">Fermer ✕</button>
+  </div>
+  <h2 id="jargon-title">Dico du jargon</h2>
+  <p class="hint">Chaque mot technique est expliqué en une ou deux phrases, souvent avec une image de la vie courante. Tapez quelques lettres pour filtrer la liste.</p>
+  <label for="jargon-search">Chercher un mot</label>
+  <input id="jargon-search" type="search" maxlength="40" autocomplete="off" spellcheck="false" placeholder="Par exemple : contrat, clé, JSON…"
+    aria-controls="jargon-list" [ngModel]="jargonQuery()" (ngModelChange)="jargonQuery.set($event)">
+  <p id="jargon-count" class="hint" role="status">{{ filteredJargon().length }} mot{{ filteredJargon().length > 1 ? 's' : '' }} expliqué{{ filteredJargon().length > 1 ? 's' : '' }}</p>
+  @if (!filteredJargon().length) {
+    <p id="jargon-empty" class="empty">Aucun mot ne correspond. Essayez un autre mot, ou videz la recherche.</p>
+  }
+  <dl id="jargon-list" class="jargon-list">
+    @for (entry of filteredJargon(); track entry.id) {
+      <div class="jargon-entry" [id]="'jargon-' + entry.id" [class.focused]="jargonFocus() === entry.id">
+        <dt>{{ entry.term }} <span class="tag">Étape {{ stepById(entry.step).number }}</span></dt>
+        <dd>{{ entry.plain }}
+          @if (entry.like) { <em class="jargon-like">{{ entry.like }}</em> }
+          @if (entry.aka.length) { <span class="jargon-aka">Aussi appelé&nbsp;: {{ entry.aka.join(', ') }}.</span> }
+        </dd>
+      </div>
+    }
+  </dl>
+</dialog>
+<div id="toast" class="toast" role="status" [hidden]="!toast()">{{ toast() }}</div>

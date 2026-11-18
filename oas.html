@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Le contrat TheCatAPI · Swagger Editor · DSIN</title>
+  <link rel="stylesheet" href="/vendor/swagger-editor/swagger-editor.css">
+  <link rel="stylesheet" href="/oas.css">
+  <script defer src="/vendor/swagger-editor/swagger-editor-bundle.js"></script>
+  <script defer src="/vendor/swagger-editor/swagger-editor-standalone-preset.js"></script>
+  <script defer src="/oas.js"></script>
+</head>
+<body>
+  <header class="oas-header">
+    <div><a href="/">← Retour au kiosque</a><h1>Le contrat, côté source et côté usages.</h1></div>
+    <nav aria-label="Actions du contrat">
+      <button id="reset-contract" type="button">Restaurer le contrat fourni</button>
+      <a id="oas-source-link" href="/openapi.yaml" target="_blank" rel="noopener">YAML original ↗</a>
+    </nav>
+  </header>
+  <p class="oas-notice">Swagger Editor local · Source éditable à gauche, documentation à droite. Le brouillon reste dans le navigateur : ni le fichier ni l’API ne sont modifiés. Source chargée : <code>openapi.yaml</code> (racine du projet, servi sur <code>/openapi.yaml</code>). Appels désactivés ; aucune clé à saisir ici.</p>
+  <p id="oas-status" role="status">Chargement du contrat OpenAPI fourni…</p>
+  <div id="swagger-editor"></div>
+  <noscript>Activez JavaScript pour afficher Swagger Editor. Le lien YAML original reste disponible.</noscript>
+</body>
+</html>

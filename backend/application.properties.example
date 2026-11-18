@@ -1,0 +1,4 @@
+# Copier en config\application.properties, puis remplacer la valeur.
+# Ce fichier est lu par Quarkus depuis backend\config\application.properties.
+# Ne jamais committer le fichier reel ni communiquer la cle au navigateur.
+thecatapi.api-key=VOTRE_CLE_THECATAPI

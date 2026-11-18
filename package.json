@@ -1,0 +1,14 @@
+{
+  "name": "miaoudernisation-angular-quarkus",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "powershell -NoProfile -File .\\Start-Kiosque.ps1",
+    "build": "powershell -NoProfile -File .\\Build-Kiosque.ps1",
+    "test": "powershell -NoProfile -File .\\Build-Kiosque.ps1 -TestOnly",
+    "test:browser": "node --experimental-websocket tests\\browser-check.mjs"
+  },
+  "engines": {
+    "node": "^20.19.0 || ^22.12.0 || >=24.0.0"
+  }
+}

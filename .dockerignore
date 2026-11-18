@@ -1,0 +1,17 @@
+.git
+.github
+.vscode
+.idea
+.env
+
+node_modules
+frontend/node_modules
+frontend/dist
+backend/target
+dist
+logs
+tests
+
+backend/config/application.properties
+backend/config/*.properties
+**/*.log

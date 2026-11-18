@@ -1,0 +1,153 @@
+[
+  {
+    "id": "abys",
+    "name": "Abyssinian",
+    "origin": "Egypt",
+    "country_code": "EG",
+    "temperament": "Active, Curious, Playful",
+    "energy_level": 5,
+    "affection_level": 5,
+    "intelligence": 5,
+    "life_span": "14 - 15",
+    "weight": {
+      "metric": "4 - 5"
+    },
+    "description": "Exemple pédagogique : un chat curieux qui inspecterait volontiers votre architecture."
+  },
+  {
+    "id": "beng",
+    "name": "Bengal",
+    "origin": "United States",
+    "country_code": "US",
+    "temperament": "Alert, Agile, Energetic",
+    "energy_level": 5,
+    "affection_level": 5,
+    "intelligence": 5,
+    "life_span": "12 - 15",
+    "weight": {
+      "metric": "3 - 7"
+    },
+    "description": "Exemple pédagogique : candidat énergique, idéal pour réveiller une réunion."
+  },
+  {
+    "id": "birm",
+    "name": "Birman",
+    "origin": "France",
+    "country_code": "FR",
+    "temperament": "Affectionate, Gentle, Quiet",
+    "energy_level": 3,
+    "affection_level": 5,
+    "intelligence": 3,
+    "life_span": "14 - 15",
+    "weight": {
+      "metric": "3 - 7"
+    },
+    "description": "Exemple pédagogique : un profil calme pour les comités de pilotage."
+  },
+  {
+    "id": "bslo",
+    "name": "British Longhair",
+    "origin": "United Kingdom",
+    "country_code": "GB",
+    "temperament": "Affectionate, Easy Going, Independent",
+    "energy_level": 2,
+    "affection_level": 4,
+    "intelligence": 4,
+    "life_span": "12 - 14",
+    "weight": {
+      "metric": "4 - 8"
+    },
+    "description": "Exemple pédagogique : responsable des longues siestes et des longs contrats."
+  },
+  {
+    "id": "char",
+    "name": "Chartreux",
+    "origin": "France",
+    "country_code": "FR",
+    "temperament": "Affectionate, Loyal, Quiet",
+    "energy_level": 2,
+    "affection_level": 5,
+    "intelligence": 4,
+    "life_span": "12 - 15",
+    "weight": {
+      "metric": "3 - 7"
+    },
+    "description": "Exemple pédagogique : observateur silencieux, jamais de commentaire inutile en revue de code."
+  },
+  {
+    "id": "mcoo",
+    "name": "Maine Coon",
+    "origin": "United States",
+    "country_code": "US",
+    "temperament": "Gentle, Intelligent, Independent",
+    "energy_level": 3,
+    "affection_level": 5,
+    "intelligence": 5,
+    "life_span": "12 - 15",
+    "weight": {
+      "metric": "5 - 8"
+    },
+    "description": "Exemple pédagogique : un grand format qui ne nécessite pas forcément un grand monolithe."
+  },
+  {
+    "id": "norw",
+    "name": "Norwegian Forest Cat",
+    "origin": "Norway",
+    "country_code": "NO",
+    "temperament": "Sweet, Active, Intelligent",
+    "energy_level": 3,
+    "affection_level": 5,
+    "intelligence": 4,
+    "life_span": "12 - 16",
+    "weight": {
+      "metric": "4 - 7"
+    },
+    "description": "Exemple pédagogique : explorateur des forêts et des dépendances applicatives."
+  },
+  {
+    "id": "pers",
+    "name": "Persian",
+    "origin": "Iran",
+    "country_code": "IR",
+    "temperament": "Affectionate, Quiet, Sweet",
+    "energy_level": 1,
+    "affection_level": 5,
+    "intelligence": 3,
+    "life_span": "14 - 15",
+    "weight": {
+      "metric": "3 - 6"
+    },
+    "description": "Exemple pédagogique : expert du calme, même quand les alertes sonnent."
+  },
+  {
+    "id": "siam",
+    "name": "Siamese",
+    "alt_names": "Siamois",
+    "origin": "Thailand",
+    "country_code": "TH",
+    "temperament": "Active, Social, Intelligent",
+    "energy_level": 5,
+    "affection_level": 5,
+    "intelligence": 5,
+    "life_span": "12 - 15",
+    "weight": {
+      "metric": "3 - 5"
+    },
+    "description": "Exemple pédagogique : un communicant qui n'oublie jamais de miauler son statut."
+  },
+  {
+    "id": "sphy",
+    "name": "Sphynx",
+    "origin": "Canada",
+    "country_code": "CA",
+    "temperament": "Affectionate, Curious, Playful",
+    "energy_level": 3,
+    "affection_level": 5,
+    "intelligence": 5,
+    "life_span": "12 - 14",
+    "weight": {
+      "metric": "3 - 5"
+    },
+    "description": "Exemple pédagogique : une interface épurée, sans couche de poils supplémentaire."
+  }
+]

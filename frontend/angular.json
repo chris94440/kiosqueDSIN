@@ -1,0 +1,51 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "cli": { "analytics": false },
+  "projects": {
+    "kiosque": {
+      "projectType": "application",
+      "root": "",
+      "sourceRoot": "src",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "browser": "src/main.ts",
+            "index": "src/index.html",
+            "tsConfig": "tsconfig.app.json",
+            "outputPath": "dist",
+            "styles": ["../styles.css"],
+            "assets": [
+              { "glob": "openapi.json", "input": "..", "output": "/" },
+              { "glob": "openapi.yaml", "input": "..", "output": "/" },
+              { "glob": "oas.*", "input": "..", "output": "/" },
+              { "glob": "sandbox.html", "input": "..", "output": "/" },
+              { "glob": "**/*", "input": "../vendor/swagger-editor", "output": "/vendor/swagger-editor" }
+            ]
+          },
+          "configurations": {
+            "production": {
+              "outputHashing": "all",
+              "optimization": { "scripts": true, "styles": { "minify": true, "inlineCritical": false }, "fonts": false },
+              "budgets": [{ "type": "initial", "maximumWarning": "650kB", "maximumError": "1MB" }]
+            },
+            "development": { "optimization": false, "sourceMap": true }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "configurations": {
+            "development": { "buildTarget": "kiosque:build:development" }
+          },
+          "defaultConfiguration": "development"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": { "tsConfig": "tsconfig.spec.json", "runnerConfig": "vitest.config.ts" }
+        }
+      }
+    }
+  }
+}

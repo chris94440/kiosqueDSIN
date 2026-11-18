@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+<jpackage-state version="21.0.4" platform="windows">
+  <app-version>1.0</app-version>
+  <main-launcher>t2-no-desktop-compiler</main-launcher>
+  <main-class>io.quarkus.runner.GeneratedMain</main-class>
+  <signed>false</signed>
+  <app-store>false</app-store></jpackage-state>

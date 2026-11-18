@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<title>Bac à sable du kiosque</title>
+<script>
+// Ce cadre n'affiche rien par lui-même. Il attend le code HTML que le kiosque lui envoie, l'écrit dans son propre
+// document et signale chaque appel réseau. Il s'exécute isolé : sans accès au kiosque, à ses cookies ni à sa
+// mémoire, et avec une politique CSP qui ne lui laisse joindre que thecatapi.com (voir HttpHeaders.java).
+(function () {
+  'use strict';
+  var CHANNEL = 'kiosque-sandbox';
+  var PLACEHOLDER = 'VOTRE_CLE_API';
+  var API_HOSTS = { 'https://api.thecatapi.com': true, 'https://beta-api.thecatapi.com': true };
+  var host = window.parent;
+  var started = false;
+  if (host === window) return;
+
+  function send(message) {
+    message.channel = CHANNEL;
+    host.postMessage(message, '*');
+  }
+
+  function report(method, url, status, begun) {
+    send({ type: 'call', method: method, url: String(url).slice(0, 200), status: status, ms: Math.round(performance.now() - begun) });
+  }
+
+  function reply(status, body) {
+    return new Response(JSON.stringify(body), { status: status, headers: { 'content-type': 'application/json' } });
+  }
+
+  // Données simulées : le kiosque fabrique les réponses à la place de TheCatAPI, avec les races d'exemple qu'il a envoyées.
+  function simulated(url, method, headers, breeds) {
+    var target;
+    try { target = new URL(url, 'https://api.thecatapi.com'); } catch (error) { return Promise.reject(new TypeError('Failed to fetch')); }
+    if (!API_HOSTS[target.origin]) return Promise.reject(new TypeError('Failed to fetch'));
+    var key = headers.get('x-api-key');
+    if (!key || key === PLACEHOLDER) {
+      return Promise.resolve(reply(403, { statusCode: 403, message: 'Authentication required. Please provide a valid API key.', error: 'Forbidden' }));
+    }
+    if (method !== 'GET') return Promise.resolve(reply(405, { message: 'Les données simulées ne gèrent que les lectures (GET).' }));
+    var path = target.pathname.replace(/\/+$/, '');
+    if (path === '/v1/breeds') return Promise.resolve(reply(200, breeds));
+    if (path === '/v1/breeds/search') {
+      var q = (target.searchParams.get('q') || '').toLowerCase();
+      return Promise.resolve(reply(200, breeds.filter(function (breed) { return String(breed.name).toLowerCase().indexOf(q) !== -1; })));
+    }
+    var one = /^\/v1\/breeds\/([A-Za-z0-9_-]+)$/.exec(path);
+    if (one) {
+      var found = breeds.filter(function (breed) { return breed.id === one[1]; })[0];
+      return Promise.resolve(found ? reply(200, found) : reply(404, { statusCode: 404, message: 'Race introuvable.' }));
+    }
+    if (path === '/v1/images/search') return Promise.resolve(reply(200, []));
+    return Promise.resolve(reply(404, { statusCode: 404, message: 'Route inconnue dans les données simulées.' }));
+  }
+
+  function wrapFetch(simulate, breeds) {
+    var realFetch = window.fetch.bind(window);
+    window.fetch = function (input, init) {
+      var begun = performance.now();
+      var url = '';
+      var method = 'GET';
+      var headers = new Headers();
+      try {
+        var request = typeof Request !== 'undefined' && input instanceof Request ? input : null;
+        url = request ? request.url : String(input);
+        method = String((init && init.method) || (request && request.method) || 'GET').toUpperCase();
+        headers = new Headers((init && init.headers) || (request && request.headers) || undefined);
+      } catch (error) { /* la page recevra l'erreur de fetch elle-même */ }
+      var pending = simulate ? simulated(url, method, headers, breeds) : realFetch(input, init);
+      return Promise.resolve(pending).then(function (response) {
+        report(method, url, response.status, begun);
+        return response;
+      }, function (error) {
+        report(method, url, 0, begun);
+        throw error;
+      });
+    };
+  }
+
+  function run(html, simulate, breeds) {
+    wrapFetch(simulate, breeds);
+    // document.open() efface les écouteurs déjà posés : ceux qui signalent les erreurs viennent donc après.
+    document.open();
+    window.addEventListener('error', function (event) {
+      send({ type: 'error', message: String(event.message || 'Erreur JavaScript') });
+    });
+    window.addEventListener('unhandledrejection', function (event) {
+      var reason = event.reason;
+      send({ type: 'error', message: 'Promesse rejetée : ' + String(reason && reason.message ? reason.message : reason) });
+    });
+    document.addEventListener('securitypolicyviolation', function (event) {
+      send({ type: 'error', message: 'Bloqué par la fenêtre isolée : ' + String(event.blockedURI || event.violatedDirective) });
+    });
+    // Le clavier appartient au cadre dès qu'on y clique : Échap doit pourtant fermer la fenêtre du kiosque.
+    window.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') send({ type: 'escape' });
+    }, true);
+    document.write(html);
+    document.close();
+  }
+
+  window.addEventListener('message', function (event) {
+    var data = event.data;
+    if (started || event.source !== host || !data || data.channel !== CHANNEL || data.type !== 'run' || typeof data.html !== 'string') return;
+    started = true;
+    run(data.html, data.simulate === true, Array.isArray(data.breeds) ? data.breeds : []);
+  });
+  send({ type: 'ready' });
+}());
+</script>
+</head>
+<body></body>
+</html>
