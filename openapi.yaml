@@ -422,21 +422,20 @@ paths:
       responses:
         '200':
           description: List of webhook endpoints
-          schema:
-            example:
-            - id: 123e4567-e89b-12d3-a456-426614174000
-              url: https://example.com/webhook
-              enabled_events:
-              - image.uploaded
-              description: Production Webhook
-              status: enabled
-              created_at: '2023-01-01T00:00:00Z'
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/CreateWebhookEndpointDto'
+                example:
+                - id: 123e4567-e89b-12d3-a456-426614174000
+                  url: https://example.com/webhook
+                  enabled_events:
+                  - image.uploaded
+                  description: Production Webhook
+                  status: enabled
+                  created_at: '2023-01-01T00:00:00Z'
       security:
       - x-api-key: []
       summary: List all webhook endpoints
