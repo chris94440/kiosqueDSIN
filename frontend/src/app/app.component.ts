@@ -17,6 +17,7 @@ import {
   addCall, explainError, hasKeyPlaceholder, isKeyFormat, looksLikeSecret, maskSecrets, parseSandboxEvent, prepareSandboxCode, readCall,
   SANDBOX_CHANNEL, SANDBOX_MAX, SANDBOX_SCENARIOS, SANDBOX_SIMULATED_KEY, sampleCode, SandboxCall, SandboxScenarioId,
 } from './sandbox';
+import { canonicalShareUrl, defaultShareUrl, SHARE_URL_MAX } from './share-qr';
 
 type WordId = 'race' | 'photo' | 'favori';
 interface CurlRun extends CurlResult { scenario: CurlScenarioId; simulated: boolean; }
@@ -84,6 +85,12 @@ export class AppComponent implements OnInit {
   readonly curlResult = signal<CurlRun | null>(null);
   readonly curlRunning = signal(false);
   private curlGeneration = 0;
+  readonly shareUrlMax = SHARE_URL_MAX;
+  readonly shareUrlInput = signal(defaultShareUrl(location.href));
+  readonly shareQrDataUrl = signal('');
+  readonly shareQrUrl = signal('');
+  readonly shareQrError = signal('');
+  readonly shareQrLoading = signal(false);
   readonly sandboxMax = SANDBOX_MAX;
   readonly sandboxScenario = signal<SandboxScenarioId>('fiche');
   private readonly sandboxCodes = signal<Readonly<Partial<Record<SandboxScenarioId, string>>>>({});
@@ -251,6 +258,7 @@ ${JSON.stringify({ breed: breed.raw, images: this.photos().map((photo) => photo.
   ngOnInit(): void {
     if (this.active() === 'contrat') void this.loadContract();
     if (this.active() === 'ia') void this.loadVotes();
+    void this.generateShareQr();
     void this.initialize();
   }
   private async initialize(): Promise<void> {
@@ -413,6 +421,38 @@ ${JSON.stringify({ breed: breed.raw, images: this.photos().map((photo) => photo.
   async copyPrompt(): Promise<void> {
     const copied = await this.writeClipboard(this.prompt());
     this.markDone('prompt', copied ? 'Prompt copié.' : CLIPBOARD_UNAVAILABLE);
+  }
+  setShareUrlInput(value: string): void {
+    this.shareUrlInput.set(value.slice(0, this.shareUrlMax));
+    this.shareQrError.set('');
+  }
+  useCurrentShareUrl(): void {
+    this.setShareUrlInput(defaultShareUrl(location.href));
+    void this.generateShareQr();
+  }
+  async generateShareQr(): Promise<void> {
+    const url = canonicalShareUrl(this.shareUrlInput());
+    if (!url) {
+      this.shareQrDataUrl.set('');
+      this.shareQrUrl.set('');
+      this.shareQrError.set('URL invalide : saisissez une adresse complète en http:// ou https://');
+      return;
+    }
+    this.shareQrLoading.set(true);
+    this.shareQrError.set('');
+    try {
+      const { toDataURL } = await import('qrcode');
+      const dataUrl = await toDataURL(url, { width: 220, margin: 1, errorCorrectionLevel: 'M' });
+      this.shareUrlInput.set(url);
+      this.shareQrUrl.set(url);
+      this.shareQrDataUrl.set(dataUrl);
+    } catch (error: unknown) {
+      this.shareQrDataUrl.set('');
+      this.shareQrUrl.set('');
+      this.shareQrError.set(`Génération du QR code impossible : ${errorMessage(error)}`);
+    } finally {
+      this.shareQrLoading.set(false);
+    }
   }
   async copyAiPrompt(prompt: AiPrompt): Promise<void> {
     const copied = await this.writeClipboard(this.withPromptKey(prompt.text));

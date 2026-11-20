@@ -37,6 +37,15 @@ p { margin: 0 0 12px; }
 .notice { border: 1px solid #c9d9c0; padding: 12px 16px; border-radius: 10px; background: #ebf2e2; font-size: 14px; overflow-wrap: anywhere; }
 .notice.simulated { background: #fff0da; border-color: #c49350; color: #6f4013; }
 #source-banner { margin-bottom: 14px; }
+.share-qr { margin: 0 0 16px; padding: 14px 16px; border: 1px solid #b7c5b8; border-radius: 12px; background: #f3f8e6; }
+.share-qr h2 { margin-bottom: 4px; font-size: 19px; letter-spacing: -.4px; }
+.share-qr .hint { margin: 4px 0 10px; }
+.share-qr-form label { display: block; margin-bottom: 6px; font-weight: 600; }
+.share-qr-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.share-qr-row input { flex: 1; min-width: min(380px, 100%); min-height: 40px; padding: .45rem .6rem; border: 1px solid var(--line); background: white; }
+.share-qr-preview { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-top: 10px; }
+.share-qr-preview img { display: block; width: 170px; height: 170px; padding: 6px; background: white; border: 1px solid var(--line); border-radius: 10px; }
+.share-qr-url { margin: 0 0 8px; font: 12px/1.45 Consolas, monospace; overflow-wrap: anywhere; max-width: 56ch; }
 .journey { position: sticky; top: 0; z-index: 5; margin: 0 -4vw 26px; padding: 10px 4vw; background: var(--paper); border-bottom: 1px solid var(--line); }
 .tablist { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 .tab { position: relative; display: flex; align-items: center; gap: 10px; min-width: 0; padding: 9px 12px; text-align: left; border-radius: 12px; }
@@ -498,6 +507,8 @@ button.jargon:hover { border-bottom-style: solid; background: #e6efd9; }
   .chain { grid-template-columns: 1fr; }
   .lab-step { grid-template-columns: 28px minmax(0, 1fr); gap: 10px; } .step-badge { width: 28px; height: 28px; font-size: 14px; }
   .glossary { font-size: 13px; } .glossary th, .glossary td { padding: 8px 10px; } .glossary tbody th { width: auto; }
+  .share-qr-row { flex-direction: column; align-items: stretch; }
+  .share-qr-row .primary, .share-qr-row .quiet { width: 100%; }
   .curl-controls { flex-direction: column; align-items: stretch; }
   .try-box { flex-direction: column; align-items: stretch; }
   .browser-stage iframe { height: 380px; }
