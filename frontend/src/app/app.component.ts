@@ -17,7 +17,7 @@ import {
   addCall, explainError, hasKeyPlaceholder, isKeyFormat, looksLikeSecret, maskSecrets, parseSandboxEvent, prepareSandboxCode, readCall,
   SANDBOX_CHANNEL, SANDBOX_MAX, SANDBOX_SCENARIOS, SANDBOX_SIMULATED_KEY, sampleCode, SandboxCall, SandboxScenarioId,
 } from './sandbox';
-import { canonicalShareUrl, defaultShareUrl, resolveQrToDataURL, SHARE_URL_MAX } from './share-qr';
+import { buildQrDataUrl, canonicalShareUrl, defaultShareUrl, resolveQrApi, SHARE_URL_MAX } from './share-qr';
 
 type WordId = 'race' | 'photo' | 'favori';
 interface CurlRun extends CurlResult { scenario: CurlScenarioId; simulated: boolean; }
@@ -441,9 +441,9 @@ ${JSON.stringify({ breed: breed.raw, images: this.photos().map((photo) => photo.
     this.shareQrLoading.set(true);
     this.shareQrError.set('');
     try {
-      const toDataURL = resolveQrToDataURL(await import('qrcode'));
-      if (!toDataURL) throw new Error('Bibliothèque QR indisponible');
-      const dataUrl = await toDataURL(url, { width: 220, margin: 1, errorCorrectionLevel: 'M' });
+      const qrApi = resolveQrApi(await import('qrcode'));
+      if (!qrApi) throw new Error('Bibliothèque QR indisponible');
+      const dataUrl = await buildQrDataUrl(qrApi, url);
       this.shareUrlInput.set(url);
       this.shareQrUrl.set(url);
       this.shareQrDataUrl.set(dataUrl);

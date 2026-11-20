@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canonicalShareUrl, defaultShareUrl, resolveQrToDataURL } from './share-qr';
+import { buildQrDataUrl, canonicalShareUrl, defaultShareUrl, resolveQrApi } from './share-qr';
 
 describe('share-qr helpers', () => {
   it('strips query and hash for the default application URL', () => {
@@ -16,10 +16,17 @@ describe('share-qr helpers', () => {
   });
 
   it('resolves qrcode API from named or default CommonJS export', () => {
-    const named = resolveQrToDataURL({ toDataURL: async () => 'ok' });
-    expect(typeof named).toBe('function');
-    const fromDefault = resolveQrToDataURL({ default: { toDataURL: async () => 'ok' } });
-    expect(typeof fromDefault).toBe('function');
-    expect(resolveQrToDataURL({})).toBeNull();
+    const named = resolveQrApi({ toDataURL: async () => 'ok' });
+    expect(typeof named?.toDataURL).toBe('function');
+    const fromDefault = resolveQrApi({ default: { toString: async () => '<svg/>' } });
+    expect(typeof fromDefault?.toString).toBe('function');
+    expect(resolveQrApi({})).toBeNull();
+  });
+
+  it('prefers SVG generation and falls back to PNG data URL', async () => {
+    const svgData = await buildQrDataUrl({ toString: async () => '<svg>ok</svg>' }, 'https://example.com');
+    expect(svgData.startsWith('data:image/svg+xml')).toBe(true);
+    const pngData = await buildQrDataUrl({ toDataURL: async () => 'data:image/png;base64,abc' }, 'https://example.com');
+    expect(pngData).toBe('data:image/png;base64,abc');
   });
 });
