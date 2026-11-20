@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canonicalShareUrl, defaultShareUrl } from './share-qr';
+import { canonicalShareUrl, defaultShareUrl, resolveQrToDataURL } from './share-qr';
 
 describe('share-qr helpers', () => {
   it('strips query and hash for the default application URL', () => {
@@ -13,5 +13,13 @@ describe('share-qr helpers', () => {
     expect(canonicalShareUrl('ftp://example.com')).toBeNull();
     expect(canonicalShareUrl('127.0.0.1:8080')).toBeNull();
     expect(canonicalShareUrl('   ')).toBeNull();
+  });
+
+  it('resolves qrcode API from named or default CommonJS export', () => {
+    const named = resolveQrToDataURL({ toDataURL: async () => 'ok' });
+    expect(typeof named).toBe('function');
+    const fromDefault = resolveQrToDataURL({ default: { toDataURL: async () => 'ok' } });
+    expect(typeof fromDefault).toBe('function');
+    expect(resolveQrToDataURL({})).toBeNull();
   });
 });
