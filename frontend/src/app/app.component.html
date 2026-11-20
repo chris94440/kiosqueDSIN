@@ -88,7 +88,6 @@
       <div class="panel-intro">
         <ng-container *ngTemplateOutlet="meta; context: { $implicit: stepById('besoin') }"></ng-container>
         <h2>On aime les chats&nbsp;: testons l’API ensemble</h2>
-        <p class="lead">Phase 1 en version directe&nbsp;: on introduit <strong>curl</strong>, on tente un premier appel sans clé, puis le même avec clé. Ensuite on lit la réponse&nbsp;: est-ce clair, que comprenez-vous, qu’est-ce qui reste flou&nbsp;?</p>
         <ng-container *ngTemplateOutlet="goal; context: { $implicit: stepById('besoin') }"></ng-container>
         <div class="story">
           <div>
@@ -145,7 +144,6 @@
       <div class="panel-intro">
         <ng-container *ngTemplateOutlet="meta; context: { $implicit: stepById('contrat') }"></ng-container>
         <h2>Atelier IA&nbsp;: du curl à une page web</h2>
-        <p class="lead">On repart de l’appel curl validé, puis on s’appuie sur le contrat OpenAPI pour demander à <strong>Copilot Covéa</strong> de générer une page web qui appelle l’API. Objectif&nbsp;: produire vite, relire proprement, garder la clé sous contrôle.</p>
         <ng-container *ngTemplateOutlet="goal; context: { $implicit: stepById('contrat') }"></ng-container>
       </div>
       <ng-container *ngTemplateOutlet="missionList; context: { $implicit: stepById('contrat') }"></ng-container>
@@ -292,7 +290,6 @@
       <div class="panel-intro">
         <ng-container *ngTemplateOutlet="meta; context: { $implicit: stepById('appels') }"></ng-container>
         <h2>Les standards web permettent d’intégrer vite</h2>
-        <p class="lead">Ici, on pose tous les concepts utiles en pratique&nbsp;: <strong>API first</strong>, <strong>Richardson N2</strong>, notion de <strong>SPA</strong> et distinction <strong>front / BFF</strong>. Ce sont des standards simples à brancher rapidement, loin d’intégrations lourdes type SOAP.</p>
         <ng-container *ngTemplateOutlet="goal; context: { $implicit: stepById('appels') }"></ng-container>
       </div>
       <ng-container *ngTemplateOutlet="missionList; context: { $implicit: stepById('appels') }"></ng-container>
@@ -424,8 +421,6 @@
       <div class="panel-intro">
         <ng-container *ngTemplateOutlet="meta; context: { $implicit: stepById('bilan') }"></ng-container>
         <h2>Conclusion de l’atelier</h2>
-        <p class="lead">Dernière phase&nbsp;: on synthétise ce que vous avez vu et ce que vous pouvez réutiliser tout de suite dans vos projets.</p>
-        <ng-container *ngTemplateOutlet="goal; context: { $implicit: stepById('bilan') }"></ng-container>
       </div>
       <ng-container *ngTemplateOutlet="missionList; context: { $implicit: stepById('bilan') }"></ng-container>
     </header>

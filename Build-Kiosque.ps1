@@ -17,25 +17,63 @@ function Get-NpmLatestLogFile {
     }
 }
 
+function Test-NpmRegistryReachable([string]$RegistryUrl, [int]$TimeoutSeconds = 8) {
+    if ([string]::IsNullOrWhiteSpace($RegistryUrl) -or $RegistryUrl -eq 'undefined' -or $RegistryUrl -eq '(non defini)') {
+        return $true
+    }
+
+    try {
+        $base = [Uri]$RegistryUrl
+        $probe = [Uri]::new($base, '-/ping?write=true')
+        Invoke-WebRequest -UseBasicParsing -Uri $probe.AbsoluteUri -Method Get -TimeoutSec $TimeoutSeconds -MaximumRedirection 0 -ErrorAction Stop | Out-Null
+        return $true
+    }
+    catch {
+        $httpResponse = $_.Exception.Response
+        if ($httpResponse) {
+            # 401/403/etc. signifient que le serveur est joignable.
+            return $true
+        }
+        return $false
+    }
+}
+
 function Install-AngularDependencies {
     $previousNpmRegistry = $env:NPM_CONFIG_REGISTRY
     try {
+        $publicRegistry = 'https://registry.npmjs.org/'
+        $lockFile = Join-Path (Get-Location) 'package-lock.json'
+        $npmInstallMode = if (Test-Path -LiteralPath $lockFile) { 'ci' } else { 'install' }
+        $npmInstallArgs = @($npmInstallMode, '--no-audit', '--no-fund')
+
         $currentRegistry = (& npm config get registry 2>$null).Trim()
         if ([string]::IsNullOrWhiteSpace($currentRegistry) -or $currentRegistry -eq 'undefined') {
             $currentRegistry = '(non defini)'
         }
-        Write-Host "Installation des dependances Angular (npm ci)..."
+        $registryForInstall = $currentRegistry
+        if ($npmInstallMode -eq 'install') {
+            Write-Host 'package-lock.json absent : bascule vers "npm install".' -ForegroundColor Yellow
+        }
+        Write-Host "Installation des dependances Angular (npm $npmInstallMode)..."
         Write-Host "Registry npm courant : $currentRegistry"
-        & npm ci --no-audit --no-fund
+
+        if ($currentRegistry -ne '(non defini)' -and $currentRegistry -ne $publicRegistry) {
+            if (-not (Test-NpmRegistryReachable -RegistryUrl $currentRegistry -TimeoutSeconds 8)) {
+                Write-Host "Registry npm courant injoignable rapidement. Bascule immediate vers $publicRegistry." -ForegroundColor Yellow
+                $env:NPM_CONFIG_REGISTRY = $publicRegistry
+                $registryForInstall = $publicRegistry
+            }
+        }
+
+        & npm @npmInstallArgs
         if ($LASTEXITCODE -eq 0) { return }
 
         $exitCodes = @($LASTEXITCODE)
-        Write-Host "npm ci en echec (code $LASTEXITCODE)." -ForegroundColor Yellow
-        $publicRegistry = 'https://registry.npmjs.org/'
-        if ($currentRegistry -ne $publicRegistry) {
+        Write-Host "npm $npmInstallMode en echec (code $LASTEXITCODE)." -ForegroundColor Yellow
+        if ($registryForInstall -ne $publicRegistry) {
             Write-Host "Nouvelle tentative via $publicRegistry..." -ForegroundColor Yellow
             $env:NPM_CONFIG_REGISTRY = $publicRegistry
-            & npm ci --no-audit --no-fund
+            & npm @npmInstallArgs
             $exitCodes += $LASTEXITCODE
             if ($LASTEXITCODE -eq 0) { return }
             Write-Host "Deuxieme tentative en echec (code $LASTEXITCODE)." -ForegroundColor Yellow

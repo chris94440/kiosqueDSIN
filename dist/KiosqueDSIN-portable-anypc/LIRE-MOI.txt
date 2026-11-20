@@ -1,0 +1,53 @@
+KIOSQUE DSIN - VERSION PORTABLE ANY-PC (derniere build)
+========================================================
+
+Cette version est construite depuis les sources courantes de D:\kiosqueDSIN\2026.
+Elle ne depend pas de KiosqueDSIN.exe.
+
+Contenu:
+- Lancer-Kiosque.cmd
+- Arreter-Kiosque.cmd
+- Partager-Kiosque.cmd
+- Partager-Kiosque.ps1
+- runtime\... (Java inclus)
+- app\quarkus-app\... (application Quarkus complete)
+- config\application.properties
+
+Demarrage:
+1) Ouvrir config\application.properties
+2) Si besoin, renseigner votre cle:
+   thecatapi.api-key=VOTRE_CLE_THECATAPI
+   (si une cle est deja presente, elle est pre-remplie automatiquement dans l'UI)
+3) Double-cliquer Lancer-Kiosque.cmd
+4) Le navigateur s'ouvre automatiquement
+   (sinon utiliser l'URL affichee dans la console)
+
+Verification:
+- Ouvrir /config sur le meme port que l'URL console
+- "hasApiKey" doit etre true
+
+Arret:
+- Ctrl+C dans la fenetre serveur
+- ou Arreter-Kiosque.cmd
+
+Partage externe (npx localtunnel):
+1) Verifier que Node.js (avec npm/npx) est installe sur le PC
+2) Double-cliquer Partager-Kiosque.cmd
+3) Attendre la ligne "your url is: https://..."
+4) Partager cette URL HTTPS
+
+Sous-domaine personnalise:
+- Par defaut le script demande : https://miaoudernisation.loca.lt
+- Si indisponible, fallback automatique vers une URL aleatoire
+- Pour forcer un autre nom :
+  Partager-Kiosque.cmd -Subdomain mon-nom
+
+Notes partage:
+- Le script demarre le kiosque automatiquement si besoin
+- Le tunnel cible l'instance locale detectee (port 8080..8090)
+- Journal partage dans logs\partager-kiosque-*.log
+
+Si rien ne demarre:
+- Le launcher prend automatiquement un port libre entre 8080 et 8090
+- Si le ZIP vient d'Internet, clic droit > Proprietes > "Debloquer"
+- Relancer Lancer-Kiosque.cmd

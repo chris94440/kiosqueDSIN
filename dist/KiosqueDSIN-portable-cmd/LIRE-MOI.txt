@@ -1,0 +1,26 @@
+KIOSQUE DSIN - VERSION PORTABLE WINDOWS (sans exe jpackage)
+============================================================
+
+Objectif:
+- Fonctionner sur un PC Windows hors Covéa.
+- Démarrer un serveur local et servir l'application.
+- Aucune installation Java requise (runtime fourni dans ce dossier).
+
+Demarrage:
+1) Ouvrir config\application.properties
+2) Mettre votre cle TheCatAPI:
+   thecatapi.api-key=VOTRE_CLE_THECATAPI
+3) Double-cliquer Lancer-Kiosque.cmd
+4) Ouvrir http://127.0.0.1:8080
+
+Verification:
+- Ouvrir http://127.0.0.1:8080/config
+- "hasApiKey" doit etre true
+
+Arret:
+- Dans la fenetre du serveur: Ctrl+C
+- ou double-cliquer Arreter-Kiosque.cmd
+
+En cas d'erreur de demarrage:
+- Verifier que le port 8080 n'est pas deja utilise
+- Verifier la cle dans config\application.properties

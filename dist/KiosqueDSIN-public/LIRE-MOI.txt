@@ -1,0 +1,25 @@
+KIOSQUE DSIN - VERSION PORTABLE WINDOWS
+=======================================
+
+Contenu:
+- KiosqueDSIN.exe
+- runtime Java integre (aucune installation Java necessaire)
+- configuration dans config\application.properties
+
+Mise en route:
+1) Ouvrir config\application.properties
+2) Renseigner votre cle:
+   thecatapi.api-key=VOTRE_CLE_THECATAPI
+3) Lancer KiosqueDSIN.exe
+4) Ouvrir http://127.0.0.1:8080
+
+Verification cle:
+- Ouvrir http://127.0.0.1:8080/config
+- Le champ "hasApiKey" doit etre a true
+
+Arret:
+- Fermer la fenetre KiosqueDSIN (ou Ctrl+C si lance en console)
+
+Compatibilite:
+- Windows 64 bits
+- Fonctionne hors environnement Covea
