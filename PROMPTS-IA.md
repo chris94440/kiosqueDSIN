@@ -93,7 +93,7 @@ Dire qu'un OAS existant ne prouve pas une conception API first chez le fournisse
 Présenter DDD comme une démarche métier, pas comme un synonyme de microservices.
 
 ATELIER CURL (onglet 2)
-Montrer l'appel GET https://api.thecatapi.com/v1/breeds/abys sans clé, puis avec l'en-tête
+Montrer l'appel GET https://api.thecatapi.com/v1/breeds/char sans clé, puis avec l'en-tête
 x-api-key pour la race char. Chaque commande a ses boutons « Copier » et « Jouer » : « Jouer »
 ouvre une fenêtre où le BFF rejoue l'appel et affiche le statut, sa lecture et le JSON reçu.
 L'identifiant de race est modifiable (lettres, chiffres, _ et -, 40 caractères au plus).

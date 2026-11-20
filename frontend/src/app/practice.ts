@@ -5,7 +5,7 @@ export const KEY_PLACEHOLDER = 'VOTRE_CLE_API';
 export const PUBLIC_API = 'https://api.thecatapi.com/v1';
 
 export type CurlScenarioId = 'sans-cle' | 'avec-cle';
-export const CURL_DEFAULT_BREED: Readonly<Record<CurlScenarioId, string>> = { 'sans-cle': 'abys', 'avec-cle': 'char' };
+export const CURL_DEFAULT_BREED: Readonly<Record<CurlScenarioId, string>> = { 'sans-cle': 'char', 'avec-cle': 'char' };
 
 const BREED_ID = /^[A-Za-z0-9_-]{1,40}$/;
 export function isBreedId(value: string): boolean {

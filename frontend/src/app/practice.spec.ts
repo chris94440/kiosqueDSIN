@@ -6,21 +6,21 @@ import {
 
 describe('commandes curl de l’atelier', () => {
   it('reproduit les deux appels du formateur, sans clé puis avec l’en-tête x-api-key', () => {
-    expect(curlCommand('sans-cle', 'abys')).toBe('curl https://api.thecatapi.com/v1/breeds/abys --ssl-no-revoke');
+    expect(curlCommand('sans-cle', 'char')).toBe('curl https://api.thecatapi.com/v1/breeds/char --ssl-no-revoke');
     expect(curlCommand('avec-cle', 'char'))
       .toBe(`curl -H "x-api-key: ${KEY_PLACEHOLDER}" https://api.thecatapi.com/v1/breeds/char --ssl-no-revoke`);
   });
   it('ne recopie jamais un identifiant qui pourrait injecter une autre commande', () => {
     for (const hostile of ['', 'abys & calc', 'abys"; rm -rf', '../x', 'a'.repeat(41)]) {
       expect(isBreedId(hostile)).toBe(false);
-      expect(curlCommand('sans-cle', hostile)).toBe(curlCommand('sans-cle', 'abys'));
+      expect(curlCommand('sans-cle', hostile)).toBe(curlCommand('sans-cle', 'char'));
     }
     expect(isBreedId('mcoo')).toBe(true);
   });
   it('rejoue l’appel par le BFF : route réelle ou simulée, avec ou sans clé', () => {
     expect(curlRoute('avec-cle', 'char', 'live')).toBe('/api/breeds/char');
-    expect(curlRoute('sans-cle', 'abys', 'live')).toBe('/api/no-key/breeds/abys');
-    expect(curlRoute('sans-cle', 'abys', 'demo')).toBe('/demo/no-key/breeds/abys');
+    expect(curlRoute('sans-cle', 'char', 'live')).toBe('/api/no-key/breeds/char');
+    expect(curlRoute('sans-cle', 'char', 'demo')).toBe('/demo/no-key/breeds/char');
     expect(curlRoute('avec-cle', 'a b', 'demo')).toBe('/demo/breeds/a%20b');
   });
 });

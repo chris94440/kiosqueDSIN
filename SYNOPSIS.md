@@ -155,15 +155,15 @@ Dans le détail d'une opération, la ligne « Accès » indique la clé `x-api-k
 **11:00–13:00 · Appeler sans clé.** Faire taper la commande dans un terminal (cmd : `curl` ; PowerShell : `curl.exe`) :
 
 ```text
-curl https://api.thecatapi.com/v1/breeds/abys --ssl-no-revoke
+curl https://api.thecatapi.com/v1/breeds/char --ssl-no-revoke
 ```
 
-> « On demande la race Abyssin sans rien prouver. À votre avis, que répond l'API ? »
+> « On demande la race Chartreux sans rien prouver. À votre avis, que répond l'API ? »
 
 Laisser parier, puis lancer. Réponse attendue : **403 Forbidden**, avec un JSON :
 
 ```json
-{"statusCode":403,"timestamp":"…","path":"/v1/breeds/abys","message":"Authentication required. Please provide a valid API key.","error":"Forbidden"}
+{"statusCode":403,"timestamp":"…","path":"/v1/breeds/char","message":"Authentication required. Please provide a valid API key.","error":"Forbidden"}
 ```
 
 > « Ce n'est pas une panne : c'est la sécurité qui fait son travail. L'API a compris la demande, mais aucune clé valide ne l'accompagne. »
@@ -252,7 +252,7 @@ Si un `429` apparaît : c'est le quota de 10 requêtes par minute. Patienter une
 
 > « Richardson décrit quatre niveaux de maturité. Niveau 0 : une seule adresse, toujours POST, toujours 200 ; l'action et l'erreur sont cachées dans le message. Niveau 1 : chaque chose a sa propre adresse. Niveau 2 : le verbe dit l'intention et le statut dit le résultat. Niveau 3 : la réponse contient les liens vers les actions possibles. Nous avons choisi le niveau 2. »
 
-Relier à la pratique : `GET /breeds/abys` sans clé donne 403, `GET /breeds/char` avec la clé donne 200. Option de 30 secondes : « Retourner à l'atelier curl », ouvrir « Jouer ▶ » dans l'appel avec clé et saisir un identifiant inconnu comme `zzz` pour obtenir un **404**. Préciser que les exemples des niveaux 0 et 3 sont fictifs, ceux des niveaux 1 et 2 de vrais appels, et que nous ne constatons pas de niveau 3 sans avoir audité toute l'API.
+Relier à la pratique : `GET /breeds/char` sans clé donne 403, `GET /breeds/char` avec la clé donne 200. Option de 30 secondes : « Retourner à l'atelier curl », ouvrir « Jouer ▶ » dans l'appel avec clé et saisir un identifiant inconnu comme `zzz` pour obtenir un **404**. Préciser que les exemples des niveaux 0 et 3 sont fictifs, ceux des niveaux 1 et 2 de vrais appels, et que nous ne constatons pas de niveau 3 sans avoir audité toute l'API.
 
 **27:00–29:00 · Le catalogue et la recherche**
 

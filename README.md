@@ -162,7 +162,7 @@ La page suit le conducteur de 48 minutes de `SYNOPSIS.md` : un onglet par étape
 
 - **API first en quatre temps** : parler le même langage, écrire le contrat, relire et simuler, développer en parallèle. Un encadré rappelle ce que serait le *code first*.
 - **Atelier curl** : deux commandes à copier ou à jouer. Sous PowerShell, taper `curl.exe` (`curl` y est un alias de `Invoke-WebRequest`).
-  - Sans clé : `curl https://api.thecatapi.com/v1/breeds/abys --ssl-no-revoke`. L'API refuse (**403**) : c'est le résultat attendu, et il valide la mission.
+  - Sans clé : `curl https://api.thecatapi.com/v1/breeds/char --ssl-no-revoke`. L'API refuse (**403**) : c'est le résultat attendu, et il valide la mission.
   - Avec clé : `curl -H "x-api-key: VOTRE_CLE_API" https://api.thecatapi.com/v1/breeds/char --ssl-no-revoke`. L'API répond **200**.
 - **« Jouer ▶ »** ouvre une fenêtre contextuelle où le BFF rejoue l'appel : statut, lecture du statut et JSON reçu. L'identifiant de race est modifiable (essayer `zzz` pour obtenir un 404) et le clavier suffit (Entrée pour rejouer, Échap pour fermer). La clé reste côté serveur. Avec les données simulées (plan B, voir « Source des données »), la réponse est simulée et marquée comme telle.
 - **La sécurité expliquée** : les schémas de sécurité sont lus en direct dans le contrat (`components.securitySchemes`, `security`), avec des liens cliquables vers la documentation du fournisseur (authentification, erreurs, clé gratuite) et vers le contrat dans Swagger Editor. Un encart distingue 401 et 403 : toujours lire le code de statut, jamais la formulation du message. Les liens et le détail technique sont dans des blocs « Côté technique » ou « Pour aller plus loin » repliés.
