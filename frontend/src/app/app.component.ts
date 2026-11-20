@@ -49,6 +49,7 @@ export class AppComponent implements OnInit {
   @ViewChild('sandboxDialog', { static: true }) private sandboxDialog!: ElementRef<HTMLDialogElement>;
   @ViewChild('jargonDialog', { static: true }) private jargonDialog!: ElementRef<HTMLDialogElement>;
   @ViewChild('voteDialog', { static: true }) private voteDialog!: ElementRef<HTMLDialogElement>;
+  @ViewChild('shareQrDialog', { static: true }) private shareQrDialog!: ElementRef<HTMLDialogElement>;
   // Le conteneur du cadre est vide dans le gabarit : seul ce composant y place (ou en retire) l'iframe.
   @ViewChild('sandboxStage', { static: true }) private sandboxStage!: ElementRef<HTMLElement>;
   readonly steps = JOURNEY;
@@ -422,6 +423,17 @@ ${JSON.stringify({ breed: breed.raw, images: this.photos().map((photo) => photo.
     const copied = await this.writeClipboard(this.prompt());
     this.markDone('prompt', copied ? 'Prompt copié.' : CLIPBOARD_UNAVAILABLE);
   }
+  openShareQrDialog(): void {
+    const dialog = this.shareQrDialog.nativeElement;
+    if (!dialog.open) dialog.showModal();
+    dialog.scrollTop = 0;
+    if (!this.shareQrDataUrl() && !this.shareQrLoading()) void this.useCurrentShareUrl();
+  }
+  closeShareQrDialog(): void { this.shareQrDialog.nativeElement.close(); }
+  onShareQrDialogClosed(): void {
+    if (this.shareQrDialog.nativeElement.open) return;
+    this.shareQrError.set('');
+  }
   setShareUrlInput(value: string): void {
     this.shareUrlInput.set(value.slice(0, this.shareUrlMax));
     this.shareQrError.set('');
@@ -793,6 +805,9 @@ ${JSON.stringify({ breed: breed.raw, images: this.photos().map((photo) => photo.
     this.missions.set(new Set()); this.visited.set(new Set());
     this.revealedWords.set(new Set()); this.revealedQuestionAnswers.set(new Set());
     this.techOpen.set(new Set());
+    if (this.shareQrDialog.nativeElement.open) this.closeShareQrDialog();
+    this.shareQrDataUrl.set(''); this.shareQrUrl.set(''); this.shareQrError.set(''); this.shareQrLoading.set(false);
+    this.shareUrlInput.set(defaultShareUrl(location.href));
     this.voteBoard.set(null); this.voteError.set(''); this.voteSuccess.set(''); this.voteLoading.set(false); this.voteBreedId.set('');
     this.closeJargon(); this.onJargonClosed();
     this.resetCurl();

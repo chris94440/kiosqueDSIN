@@ -2,6 +2,7 @@
   <a class="brand" href="/">DSIN <span>/ le labo des API</span></a>
   <div class="top-actions">
     <button type="button" id="open-jargon" class="jargon-open" aria-haspopup="dialog" (click)="openJargon()">Dico du jargon</button>
+    <button type="button" id="open-share-qr" class="share-open" aria-haspopup="dialog" (click)="openShareQrDialog()">Partager en QR</button>
     <a href="/oas.html" target="_blank" rel="noopener">Ouvrir le contrat (OAS) · Swagger Editor ↗</a>
     <form class="api-key-inline" (submit)="$event.preventDefault(); applyRuntimeApiKey()">
       <label class="sr-only" for="header-api-key">Clé API TheCatAPI</label>
@@ -29,30 +30,6 @@
       @else { la clé d’accès n’est pas configurée côté serveur : l’API refuse les demandes (erreur 403). }
     }
   </div>
-  <section class="share-qr" aria-labelledby="share-qr-title">
-    <h2 id="share-qr-title">Partager l’application en QR code</h2>
-    <p class="hint">Saisissez l’URL à partager, puis générez le QR code à scanner.</p>
-    <form class="share-qr-form" (submit)="$event.preventDefault(); generateShareQr()">
-      <label for="share-url">URL à encoder</label>
-      <div class="share-qr-row">
-        <input id="share-url" name="shareUrl" type="url" [maxlength]="shareUrlMax" autocomplete="off" spellcheck="false"
-          placeholder="https://127.0.0.1:8080/" [ngModel]="shareUrlInput()" (ngModelChange)="setShareUrlInput($event)">
-        <button type="submit" class="primary" [disabled]="shareQrLoading()">{{ shareQrLoading() ? 'Génération…' : 'Générer le QR code' }}</button>
-        <button type="button" class="quiet" [disabled]="shareQrLoading()" (click)="useCurrentShareUrl()">URL actuelle</button>
-      </div>
-    </form>
-    @if (shareQrError()) { <p class="error">{{ shareQrError() }}</p> }
-    @if (shareQrDataUrl()) {
-      <div class="share-qr-preview">
-        <img [src]="shareQrDataUrl()" alt="QR code de l’URL de l’application">
-        <div>
-          <p class="hint">URL encodée&nbsp;:</p>
-          <p class="share-qr-url">{{ shareQrUrl() }}</p>
-          <button type="button" class="quiet" (click)="copy(shareQrUrl())">Copier l’URL</button>
-        </div>
-      </div>
-    }
-  </section>
 
   <details id="welcome" class="welcome" [open]="welcomeOpen()" (toggle)="onWelcomeToggle($event)">
     <summary>Bienvenue&nbsp;! À quoi sert ce kiosque, et par où commencer&nbsp;?</summary>
@@ -627,6 +604,39 @@
       </section>
     }
   </div>
+</dialog>
+<dialog #shareQrDialog id="share-qr-dialog" aria-labelledby="share-qr-dialog-title" (close)="onShareQrDialogClosed()">
+  <div class="dialog-top">
+    <span class="eyebrow">PARTAGE RAPIDE</span>
+    <button type="button" id="share-qr-close" class="quiet" (click)="closeShareQrDialog()">Fermer ✕</button>
+  </div>
+  <h2 id="share-qr-dialog-title">Partager l’application en QR code</h2>
+  <section class="share-qr" aria-labelledby="share-qr-dialog-title">
+    <p class="hint">Saisissez l’URL à partager, puis générez le QR code à scanner.</p>
+    <form class="share-qr-form" (submit)="$event.preventDefault(); generateShareQr()">
+      <label for="share-url">URL à encoder</label>
+      <div class="share-qr-row">
+        <input id="share-url" name="shareUrl" type="url" [maxlength]="shareUrlMax" autocomplete="off" spellcheck="false"
+          placeholder="https://127.0.0.1:8080/" [ngModel]="shareUrlInput()" (ngModelChange)="setShareUrlInput($event)">
+        <button type="submit" class="primary" [disabled]="shareQrLoading()">{{ shareQrLoading() ? 'Génération…' : 'Générer le QR code' }}</button>
+        <button type="button" class="quiet" [disabled]="shareQrLoading()" (click)="useCurrentShareUrl()">URL actuelle</button>
+      </div>
+    </form>
+    @if (shareQrError()) {
+      <p class="error" role="alert">{{ shareQrError() }}</p>
+    } @else if (shareQrDataUrl()) {
+      <div class="share-qr-preview">
+        <img [src]="shareQrDataUrl()" alt="QR code de l’URL de l’application">
+        <div>
+          <p class="hint">URL encodée&nbsp;:</p>
+          <p class="share-qr-url">{{ shareQrUrl() }}</p>
+          <button type="button" class="quiet" (click)="copy(shareQrUrl())">Copier l’URL</button>
+        </div>
+      </div>
+    } @else {
+      <p class="hint">Aucun QR code généré pour l’instant.</p>
+    }
+  </section>
 </dialog>
 <dialog #curlDialog id="curl-dialog" aria-labelledby="curl-title" (close)="onCurlClosed()">
   <div class="dialog-top">

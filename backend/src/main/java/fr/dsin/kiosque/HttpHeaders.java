@@ -6,7 +6,7 @@ import jakarta.enterprise.event.Observes;
 
 @ApplicationScoped
 public class HttpHeaders {
-    private static final String APP_POLICY = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
+    private static final String APP_POLICY = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https: data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
     private static final String EDITOR_POLICY = "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'";
     // Cadre d'essai du code généré par l'IA : origine opaque (aucun accès au kiosque, ni cookies ni stockage),
     // scripts et styles en ligne autorisés pour la page testée, réseau limité à TheCatAPI, et incrustable par le seul kiosque.

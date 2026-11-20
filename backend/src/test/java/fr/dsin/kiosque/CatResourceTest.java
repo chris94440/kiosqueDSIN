@@ -128,6 +128,7 @@ class CatResourceTest {
         // L'assouplissement reste cantonné au cadre : la page du kiosque garde des scripts et styles strictement locaux.
         String app = given().get("/").then().extract().header("Content-Security-Policy");
         assertTrue(app.contains("script-src 'self';") && app.contains("style-src 'self';") && app.contains("connect-src 'self';"), app);
+        assertTrue(app.contains("img-src 'self' https: data:;"), app);
         assertFalse(app.contains("unsafe-inline"), app);
         assertFalse(app.contains("thecatapi.com;"), app);
     }
